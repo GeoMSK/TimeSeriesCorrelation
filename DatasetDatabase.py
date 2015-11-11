@@ -9,7 +9,7 @@ class DatasetDatabase:
     """
     Sqlite database that holds dataset information in table "dataset"
     Columns:
-    name | tick | data | time | data1 | data2
+    name | tick | date | time | data1 | data2
     """
 
     def __init__(self, db_name):

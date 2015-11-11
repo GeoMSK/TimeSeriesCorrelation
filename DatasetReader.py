@@ -79,5 +79,4 @@ class DatasetReader:
                 # overwrite old record, we have new timepoint
                 self.time_buffer[name] = [date, time, data1, data2, 1]
 
-        print(self.time_buffer[name])
         return name, date, time, data1, data2
