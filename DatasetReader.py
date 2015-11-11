@@ -32,15 +32,29 @@ class DatasetReader:
             self.dataset_handle.close()
             self.dataset_handle = None
 
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if self.dataset_handle is None:
+            raise StopIteration
+        t = self.get_next_data_averaged()
+        if t is None:
+            raise StopIteration
+        else:
+            return t
+
     def get_next_data(self):
         """
         get the data of the next line in the dataset
 
-        :return: (name, date, time, data1, data2)
+        :return: (name, date, time, data1, data2) or None if reached EOF
         :rtype: tuple
         """
         assert isinstance(self.dataset_handle, io.TextIOWrapper)
         line = self.dataset_handle.readline().rstrip('\n')
+        if line == "":
+            return None
         name, date, time, data1, data2 = line.split(",")
         return name, date, time, float(data1), float(data2)
 
@@ -51,10 +65,13 @@ class DatasetReader:
         then the new data1, data2 are averaged with the previous values. The average is computed in an incremental
         manner
 
-        :return: (name, date, time, data1, data2)
+        :return: (name, date, time, data1, data2) or None if reached EOF
         :rtype: tuple
         """
-        name, date, time, data1, data2 = self.get_next_data()
+        t = self.get_next_data()
+        if t is None:
+            return None
+        name, date, time, data1, data2 = t
         if name not in self.time_buffer:
             # first time seeing this time-series
             self.time_buffer[name] = [date, time, data1, data2, 1]

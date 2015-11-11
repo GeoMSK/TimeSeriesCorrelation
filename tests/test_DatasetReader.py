@@ -35,3 +35,7 @@ def test_DatasetReader():
 
     assert abs(ds["Forex·EURCHF·NoExpiry"]["07/08/201500:05:12"][0] - 1.042033) <= 1e-6  # 1.0420333333333334
 
+    dr.dataset_handle.seek(0)
+
+    for data in dr:
+        assert(isinstance(data, tuple))
