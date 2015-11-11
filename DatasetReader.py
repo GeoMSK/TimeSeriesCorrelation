@@ -45,6 +45,15 @@ class DatasetReader:
         return name, date, time, float(data1), float(data2)
 
     def get_next_data_averaged(self):
+        """
+        get the data of the next line in the dataset
+        if the date time in the data fetched is exactly the same as the previous fetch of the same time-series
+        then the new data1, data2 are averaged with the previous values. The average is computed in an incremental
+        manner
+
+        :return: (name, date, time, data1, data2)
+        :rtype: tuple
+        """
         name, date, time, data1, data2 = self.get_next_data()
         if name not in self.time_buffer:
             # first time seeing this time-series
@@ -54,7 +63,7 @@ class DatasetReader:
             temp_data = self.time_buffer[name]
             """:type: list """
             if temp_data[0] == date and temp_data[1] == time:
-                # same time point, average data
+                # same time point, average data (incremental average)
                 n = temp_data[4] + 1
                 old_avg1 = float(temp_data[2])
                 old_avg2 = float(temp_data[3])
