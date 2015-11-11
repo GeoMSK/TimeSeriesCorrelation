@@ -31,15 +31,21 @@ class DatasetDatabase:
                 self.conn = sql.connect(self.db_name)
             else:
                 self.conn = sql.connect(self.db_name)
-                self.create_database()
+                self._create_database()
 
-    def create_database(self):
+    def disconnect(self):
+        """
+        close the sql.Connection (self.conn) if it is connected
+        """
+        if self.is_connected():
+            self.conn.close()
+            self.conn = None
+
+    def _create_database(self):
         """
         create a new database with the name specified in self.db_name
         create table "dataset"
         """
-        if not self.is_connected():
-            self.connect()
 
         assert isinstance(self.conn, sql.Connection)
         c = self.conn.cursor()
@@ -78,12 +84,48 @@ class DatasetDatabase:
             assert isinstance(c, sql.Cursor)
             store_query = "INSERT INTO dataset VALUES (?,?,?,?,?,?);"
             try:
-                c.execute(store_query, (
-                    name, tick, date, time, data1, data2))
+                c.execute(store_query, (name, tick, date, time, data1, data2))
+                self.conn.commit()
             except sql.IntegrityError as e:
                 self.logger.error(e)
-
-            self.conn.commit()
         else:
             raise Exception("Not connected to database")
 
+    def store_multiple_data(self, multi_data):
+        """
+        stores data in list multi_data to database. multi_data is of the form:
+        [(name, tick, date, time, data1, data2), (...), ...]
+        """
+        if self.is_connected():
+            assert isinstance(self.conn, sql.Connection)
+            c = self.conn.cursor()
+            assert isinstance(c, sql.Cursor)
+            store_query = "INSERT INTO dataset VALUES (?,?,?,?,?,?);"
+            try:
+                c.executemany(store_query, multi_data)
+                self.conn.commit()
+            except sql.IntegrityError as e:
+                self.logger.error(e)
+        else:
+            raise Exception("Not connected to database")
+
+    def get_time_series(self, name):
+        """
+        :param name: the time-series name
+        :return: None if error occurred else a sql.Cursor that can be treated as an iterator, call the
+        cursor’s fetchone() method to retrieve a single matching row, or call fetchall() to get a list
+        of the matching rows.
+        """
+        if self.is_connected():
+            assert isinstance(self.conn, sql.Connection)
+            c = self.conn.cursor()
+            assert isinstance(c, sql.Cursor)
+            query = "SELECT date, time, data1, data2 FROM dataset WHERE name=?"
+            try:
+                return c.execute(query, (name,))
+            except sql.IntegrityError as e:
+                self.logger.error(e)
+        else:
+            raise Exception("Not connected to database")
+
+        return None
