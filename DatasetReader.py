@@ -1,6 +1,7 @@
 __author__ = 'gm'
 
 import io
+import logging
 
 
 class DatasetReader:
@@ -16,6 +17,7 @@ class DatasetReader:
         self.dataset_handle = None
         """:type: io.TextIOWrapper"""
         self.time_buffer = {}
+        self.logger = logging.getLogger("DatasetReader")
 
     def open_dataset(self):
         """
@@ -23,6 +25,7 @@ class DatasetReader:
         """
         if self.dataset_handle is None:
             self.dataset_handle = open(self.dataset_path, 'r')
+            self.logger.info("Open dataset file \"%s\" for reading" % self.dataset_path)
 
     def close_dataset(self):
         """
@@ -31,6 +34,7 @@ class DatasetReader:
         if self.dataset_handle is not None:
             self.dataset_handle.close()
             self.dataset_handle = None
+            self.logger.info("Close dataset file \"%s\"" % self.dataset_path)
 
     def __iter__(self):
         return self

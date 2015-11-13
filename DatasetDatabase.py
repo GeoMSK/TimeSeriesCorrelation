@@ -29,9 +29,11 @@ class DatasetDatabase:
         if not self.is_connected():
             if os.path.exists(self.db_name) and os.path.isfile(self.db_name):
                 self.conn = sql.connect(self.db_name)
+                self.logger.info("connected to database \"%s\"" % self.db_name)
             else:
                 self.conn = sql.connect(self.db_name)
                 self._create_database()
+                self.logger.info("Created database \"%s\"" % self.db_name)
 
     def disconnect(self):
         """
@@ -40,6 +42,7 @@ class DatasetDatabase:
         if self.is_connected():
             self.conn.close()
             self.conn = None
+            self.logger.info("Disconnected from database \"%s\"" % self.db_name)
 
     def _create_database(self):
         """
@@ -87,7 +90,7 @@ class DatasetDatabase:
                 c.execute(store_query, (name, tick, date, time, data1, data2))
                 self.conn.commit()
             except sql.IntegrityError as e:
-                self.logger.error(e)
+                self.logger.exception(e)
         else:
             raise Exception("Not connected to database")
 
@@ -105,7 +108,7 @@ class DatasetDatabase:
                 c.executemany(store_query, multi_data)
                 self.conn.commit()
             except sql.IntegrityError as e:
-                self.logger.error(e)
+                self.logger.exception(e)
         else:
             raise Exception("Not connected to database")
 
@@ -124,7 +127,7 @@ class DatasetDatabase:
             try:
                 return c.execute(query, (name,))
             except sql.IntegrityError as e:
-                self.logger.error(e)
+                self.logger.exception(e)
         else:
             raise Exception("Not connected to database")
 
