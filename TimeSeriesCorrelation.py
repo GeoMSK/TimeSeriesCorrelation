@@ -9,7 +9,8 @@ from DatasetConverter import DatasetConverter
 
 def main():
     logging.basicConfig(filename='TimeSeriesCorrelation.log', level=logging.DEBUG, filemode="w",
-                        format="%d-%m-%Y %H:%M:%S -- %(message)s")
+                        format="%(asctime)s -- %(message)s", datefmt="%d-%m-%Y %H:%M:%S")
+
     parser = argparse.ArgumentParser()
 
     parser.add_argument("dataset2db", metavar="dataset_file",

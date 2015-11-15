@@ -14,10 +14,10 @@ class DatasetConverter:
     TODO: missing data?
     """
 
-    def __init__(self, dataset_name, database_name, write_buffer_size=1000):
+    def __init__(self, dataset_name, database_name, write_buffer_size=100000):
         """
         :param dataset_name: the name of the dataset
-        :param database_name: the nae of the database
+        :param database_name: the name of the database
         :param write_buffer_size: gather this many ticks, then write to database
         """
         self.dataset = dataset_name

@@ -18,6 +18,9 @@ class DatasetReader:
         """:type: io.TextIOWrapper"""
         self.time_buffer = {}
         self.logger = logging.getLogger("DatasetReader")
+        self.input_buffer = []
+        self.chunk_no = 0
+        self.input_buffer_i = 0
 
     def open_dataset(self):
         """
@@ -48,6 +51,10 @@ class DatasetReader:
         else:
             return t
 
+    def _get_data_chunk(self):
+        assert isinstance(self.dataset_handle, io.TextIOWrapper)
+        self.input_buffer = self.dataset_handle.readlines(100000000)
+
     def get_next_data(self):
         """
         get the data of the next line in the dataset
@@ -56,7 +63,17 @@ class DatasetReader:
         :rtype: tuple
         """
         assert isinstance(self.dataset_handle, io.TextIOWrapper)
-        line = self.dataset_handle.readline().rstrip('\n')
+
+        if self.input_buffer_i >= len(self.input_buffer):
+            self._get_data_chunk()
+            if len(self.input_buffer) == 0:
+                return None
+            print("Processing chunk %d -- read %d MB" % (self.chunk_no, (self.chunk_no+1)*100))
+            self.chunk_no += 1
+            self.input_buffer_i = 0
+
+        line = self.input_buffer[self.input_buffer_i].rstrip('\n')
+        self.input_buffer_i += 1
         if line == "":
             return None
         name, date, time, data1, data2 = line.split(",")
