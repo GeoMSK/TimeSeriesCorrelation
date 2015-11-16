@@ -7,7 +7,7 @@ import logging
 
 class DatasetConverter:
     """
-    Converts a given dataset to an sqlite database with a single table, "dataset", with columns
+    Converts a given dataset to an sqlite database with two tables, "dataset" and "dataset_normalized" both with columns
     name | tick | date | time | data1 | data2
     
     data with the same date-time are averaged

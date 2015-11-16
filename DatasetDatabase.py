@@ -7,7 +7,7 @@ import os
 
 class DatasetDatabase:
     """
-    Sqlite database that holds dataset information in table "dataset"
+    Sqlite database that holds dataset information in table "dataset" and "dataset_normalized
     Columns:
     name | tick | date | time | data1 | data2
     """
@@ -155,7 +155,27 @@ class DatasetDatabase:
             assert isinstance(c, sql.Cursor)
             query = "SELECT distinct name FROM dataset"
             try:
-                return c.execute(query).fetchall()
+                return [t[0] for t in c.execute(query).fetchall()]
+            except sql.IntegrityError as e:
+                self.logger.exception(e)
+        else:
+            raise Exception("Not connected to database")
+
+        return None
+
+    def execute_query(self, query):
+        """
+        execute the specified query.
+        return None if error occurred else a sql.Cursor that can be treated as an iterator, call the
+        cursor’s fetchone() method to retrieve a single matching row, or call fetchall() to get a list
+        of the matching rows.
+        """
+        if self.is_connected():
+            assert isinstance(self.conn, sql.Connection)
+            c = self.conn.cursor()
+            assert isinstance(c, sql.Cursor)
+            try:
+                return c.execute(query)
             except sql.IntegrityError as e:
                 self.logger.exception(e)
         else:
