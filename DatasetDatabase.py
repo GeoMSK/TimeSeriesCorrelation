@@ -64,7 +64,18 @@ class DatasetDatabase:
                        ");"
         c.execute(create_query)
 
-    def store_data(self, name, tick, date, time, data1, data2):
+        create_query = "CREATE TABLE dataset_normalized(" \
+                       "name varchar(255)," \
+                       "tick int," \
+                       "date varchar(255)," \
+                       "time varchar(255)," \
+                       "data1 varchar(255)," \
+                       "data2 varchar(255)," \
+                       "CONSTRAINT mypk PRIMARY KEY (name, tick)" \
+                       ");"
+        c.execute(create_query)
+
+    def store_data(self, name, tick, date, time, data1, data2, table="dataset"):
         """
         stores a new row in table "dataset"
 
@@ -85,7 +96,7 @@ class DatasetDatabase:
             assert isinstance(self.conn, sql.Connection)
             c = self.conn.cursor()
             assert isinstance(c, sql.Cursor)
-            store_query = "INSERT INTO dataset VALUES (?,?,?,?,?,?);"
+            store_query = "INSERT INTO %s VALUES (?,?,?,?,?,?);" % table
             try:
                 c.execute(store_query, (name, tick, date, time, data1, data2))
                 self.conn.commit()
@@ -94,7 +105,7 @@ class DatasetDatabase:
         else:
             raise Exception("Not connected to database")
 
-    def store_multiple_data(self, multi_data):
+    def store_multiple_data(self, multi_data, table="dataset"):
         """
         stores data in list multi_data to database. multi_data is of the form:
         [(name, tick, date, time, data1, data2), (...), ...]
@@ -103,7 +114,7 @@ class DatasetDatabase:
             assert isinstance(self.conn, sql.Connection)
             c = self.conn.cursor()
             assert isinstance(c, sql.Cursor)
-            store_query = "INSERT INTO dataset VALUES (?,?,?,?,?,?);"
+            store_query = "INSERT INTO %s VALUES (?,?,?,?,?,?);" % table
             try:
                 c.executemany(store_query, multi_data)
                 self.conn.commit()
@@ -126,6 +137,25 @@ class DatasetDatabase:
             query = "SELECT date, time, data1, data2 FROM dataset WHERE name=?"
             try:
                 return c.execute(query, (name,))
+            except sql.IntegrityError as e:
+                self.logger.exception(e)
+        else:
+            raise Exception("Not connected to database")
+
+        return None
+
+    def get_distinct_names(self):
+        """
+        get all time-series names
+        :return: a list with all time-series names
+        """
+        if self.is_connected():
+            assert isinstance(self.conn, sql.Connection)
+            c = self.conn.cursor()
+            assert isinstance(c, sql.Cursor)
+            query = "SELECT distinct name FROM dataset"
+            try:
+                return c.execute(query).fetchall()
             except sql.IntegrityError as e:
                 self.logger.exception(e)
         else:

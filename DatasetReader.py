@@ -28,6 +28,10 @@ class DatasetReader:
         """
         if self.dataset_handle is None:
             self.dataset_handle = open(self.dataset_path, 'r')
+            self.time_buffer = {}
+            self.chunk_no = 0
+            self.input_buffer_i = 0
+            self.input_buffer = []
             self.logger.info("Open dataset file \"%s\" for reading" % self.dataset_path)
 
     def close_dataset(self):
@@ -37,6 +41,10 @@ class DatasetReader:
         if self.dataset_handle is not None:
             self.dataset_handle.close()
             self.dataset_handle = None
+            self.time_buffer = {}
+            self.chunk_no = 0
+            self.input_buffer_i = 0
+            self.input_buffer = []
             self.logger.info("Close dataset file \"%s\"" % self.dataset_path)
 
     def __iter__(self):
