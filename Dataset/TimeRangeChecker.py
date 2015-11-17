@@ -12,6 +12,9 @@ class TimeRangeChecker:
         self.db = None
 
     def check(self):
+        """
+        assert that every time series in table dataset of the database as the same min(time)
+        """
         self.db = DatasetDatabase(self.db_name)
         self.db.connect()
         tsnames_list = self.db.get_distinct_names()
@@ -115,4 +118,44 @@ class TimeRangeChecker:
                     line = line[:-1]
                     split_line = line.split(",")
                     dt[split_line[0]] = [split_line[1], split_line[2]]
+        return dt
+
+    def get_all_points(self, use_file=False):
+        """
+        get all points of every time series. Point is a date-time that te time-series has data for
+        returns a dictionary of the form {"time-series name": [d1,d2,d3, ...]}
+        dx are of the form "month/day/year-hours:minutes:seconds"
+        """
+        if not use_file or not os.path.exists("all-date-time-points"):
+            self.db = DatasetDatabase(self.db_name)
+            self.db.connect()
+            tsnames_list = self.db.get_distinct_names()
+
+            dt = {}
+
+            for name in tsnames_list:
+                c = self.db.execute_query("select name, date, time from dataset "
+                                          "where name='%s' order by date, time" % name)
+
+                for res in c:
+                    name = res[0]
+                    date_time = res[1] + "-" + res[2]
+
+                    if name in dt:
+                        dt[name].append(date_time)
+                    else:
+                        dt[name] = [date_time]
+
+            self.db.disconnect()
+            if use_file:
+                with open("all-date-time-points", 'w') as f:
+                    for key, value in dt.items():
+                        print(key + "," + ",".join(value), file=f)
+        else:
+            dt = {}
+            with open("all-date-time-points", 'r') as f:
+                for line in f:
+                    line = line[:-1]
+                    split_line = line.split(",")
+                    dt[split_line[0]] = split_line[1:]
         return dt

@@ -45,11 +45,18 @@ def check_dates(args):
     # TimeRangeCheck(args.database_path).check()
     # TimeRangeCheck(args.database_path).print_max_date_times()
     # TimeRangeChecker(args.database_path).print_start_end_points()
-    point_dic = TimeRangeChecker(args.database_file).get_start_end_points(use_file=True)
-    datetime_pairs = []
+    # point_dic = TimeRangeChecker(args.database_file).get_start_end_points(use_file=True)
+    # datetime_pairs = []
+    # for key, value in point_dic.items():
+    #     datetime_pairs.append(value)
+    # DatasetPlotter.plot_start_end_points(sorted(datetime_pairs))
+
+
+    point_dic = TimeRangeChecker(args.database_file).get_all_points(use_file=False)
+    points = []
     for key, value in point_dic.items():
-        datetime_pairs.append(value)
-    DatasetPlotter.plot_start_end_points(sorted(datetime_pairs))
+        points.append(value)
+    DatasetPlotter.plot_all_points(sorted(points))
 
 
 def dataset2db(args):
