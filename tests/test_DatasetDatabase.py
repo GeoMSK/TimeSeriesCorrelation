@@ -1,8 +1,9 @@
+from Dataset.DatasetDatabase import DatasetDatabase
+
 __author__ = 'gm'
 
 import sqlite3 as sql
 import os
-from DatasetDatabase import DatasetDatabase
 
 
 def test_DatasetDatabase():

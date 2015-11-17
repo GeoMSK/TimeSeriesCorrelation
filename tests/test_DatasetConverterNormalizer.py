@@ -1,7 +1,9 @@
-from DatasetConverter import DatasetConverter
-from DatasetDatabase import DatasetDatabase
-from DatasetDBNormalizer import DatasetDBNormalizer
 import os
+
+from Dataset.DatasetConverter import DatasetConverter
+from Dataset.DatasetDatabase import DatasetDatabase
+from Dataset.DatasetDBNormalizer import DatasetDBNormalizer
+
 
 __author__ = 'gm'
 

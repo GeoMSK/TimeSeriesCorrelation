@@ -1,6 +1,6 @@
-__author__ = 'gm'
+from Dataset.DatasetReader import DatasetReader
 
-from DatasetReader import DatasetReader
+__author__ = 'gm'
 
 
 def test_DatasetReader():

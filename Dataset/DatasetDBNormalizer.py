@@ -1,5 +1,7 @@
-from DatasetDatabase import DatasetDatabase
 import numpy as np
+
+from .DatasetDatabase import DatasetDatabase
+
 
 __author__ = 'gm'
 

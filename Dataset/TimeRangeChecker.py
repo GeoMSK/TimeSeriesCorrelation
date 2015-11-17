@@ -1,5 +1,7 @@
-from DatasetDatabase import DatasetDatabase
 import os
+
+from .DatasetDatabase import DatasetDatabase
+
 
 __author__ = 'gm'
 

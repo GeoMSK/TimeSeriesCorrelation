@@ -1,8 +1,8 @@
-__author__ = 'gm'
+from .DatasetReader import DatasetReader
+from .DatasetDatabase import DatasetDatabase
 
-from DatasetReader import DatasetReader
-from DatasetDatabase import DatasetDatabase
 import logging
+__author__ = 'gm'
 
 
 class DatasetConverter:

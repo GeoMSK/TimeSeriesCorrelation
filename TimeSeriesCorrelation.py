@@ -1,12 +1,14 @@
 #!/usr/bin/python3
+import logging
+import argparse
+
+from Dataset.TimeRangeChecker import TimeRangeChecker
+from Dataset.DatasetPlotter import DatasetPlotter
+from Dataset.DatasetConverter import DatasetConverter
+
 
 __author__ = 'gm'
 
-import logging
-import argparse
-from DatasetConverter import DatasetConverter
-from TimeRangeChecker import TimeRangeChecker
-from DatasetPlotter import DatasetPlotter
 
 def main():
     logging.basicConfig(filename='TimeSeriesCorrelation.log', level=logging.DEBUG, filemode="w",
