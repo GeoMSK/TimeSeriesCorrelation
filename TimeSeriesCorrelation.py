@@ -114,8 +114,13 @@ def calc(args):
     db.connect()
     first_datetime = dt.datetime.strptime(db.get_first_datetime(None), '%m/%d/%Y-%H:%M:%S')
     last_datetime = dt.datetime.strptime(db.get_last_datetime(None), '%m/%d/%Y-%H:%M:%S')
+    ts_names = db.get_distinct_names()
     pnum = (last_datetime - first_datetime).seconds
-    print("total points in interpolated dataset: " + str(pnum))
+    total_points = pnum * len(ts_names)
+    print("points per time series: %d" % pnum)
+    print("total points in interpolated dataset: " + str(total_points))
+    print("Estimated size (4 bytes per point): %d MB" % (total_points * 4 / 1024 / 1024))
+
     db.disconnect()
 
 
