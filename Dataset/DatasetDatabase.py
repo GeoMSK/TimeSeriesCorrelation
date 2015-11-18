@@ -134,7 +134,7 @@ class DatasetDatabase:
             assert isinstance(self.conn, sql.Connection)
             c = self.conn.cursor()
             assert isinstance(c, sql.Cursor)
-            query = "SELECT date, time, data1, data2 FROM dataset WHERE name=?"
+            query = "SELECT date, time, data1, data2 FROM dataset WHERE name=? order by date, time"
             try:
                 return c.execute(query, (name,))
             except sql.IntegrityError as e:
@@ -176,6 +176,66 @@ class DatasetDatabase:
             assert isinstance(c, sql.Cursor)
             try:
                 return c.execute(query)
+            except sql.IntegrityError as e:
+                self.logger.exception(e)
+        else:
+            raise Exception("Not connected to database")
+
+        return None
+
+    def get_first_datetime(self, name):
+        """
+        get the first date-time of the specified time-series, for which we have data
+        if name is None, get the global first datetime (from all time-series)
+        :param name: the time-series name
+        :return: the first date-time "month/day/year-hours:minutes:seconds"
+        """
+        if self.is_connected():
+            assert isinstance(self.conn, sql.Connection)
+            c = self.conn.cursor()
+            assert isinstance(c, sql.Cursor)
+            if name is None:
+                query = "select min(date), min(time) from dataset"
+            else:
+                query = "select min(date), min(time) from dataset where name=?"
+            try:
+                if name is None:
+                    c = c.execute(query)
+                else:
+                    c = c.execute(query, (name,))
+                res = c.fetchone()
+                date_time = res[0] + "-" + res[1]
+                return date_time
+            except sql.IntegrityError as e:
+                self.logger.exception(e)
+        else:
+            raise Exception("Not connected to database")
+
+        return None
+
+    def get_last_datetime(self, name):
+        """
+        get the last date-time of the specified time-series, for which we have data
+        if name is None, get the global last datetime (from all time-series)
+        :param name: the time-series name
+        :return: the last date-time "month/day/year-hours:minutes:seconds"
+        """
+        if self.is_connected():
+            assert isinstance(self.conn, sql.Connection)
+            c = self.conn.cursor()
+            assert isinstance(c, sql.Cursor)
+            if name is None:
+                query = "select max(date), max(time) from dataset"
+            else:
+                query = "select max(date), max(time) from dataset where name=?"
+            try:
+                if name is None:
+                    c = c.execute(query)
+                else:
+                    c = c.execute(query, (name,))
+                res = c.fetchone()
+                date_time = res[0] + "-" + res[1]
+                return date_time
             except sql.IntegrityError as e:
                 self.logger.exception(e)
         else:

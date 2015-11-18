@@ -21,7 +21,7 @@ class DatasetPlotter:
         """
         plt.figure(figsize=(12, 8))
         plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%m/%d/%Y\n%H:%M:%S'))
-        plt.gca().xaxis.set_major_locator(mdates.HourLocator(interval=6))
+        # plt.gca().xaxis.set_major_locator(mdates.HourLocator(interval=6))
         plt.title("Time Series Duration\n"
                   "Leftmost point of line is first point of time-series\n"
                   "Rightmost point of line is last point of time-series")
@@ -35,7 +35,7 @@ class DatasetPlotter:
             plt.plot(x, y, color="blue")
             t += 1
 
-        plt.ylim([-1, t+1])
+        plt.ylim([-t * 0.1, t + t * 0.1])
 
         plt.show()
 
@@ -65,3 +65,4 @@ class DatasetPlotter:
         plt.ylim([-1, t+1])
 
         plt.show()
+

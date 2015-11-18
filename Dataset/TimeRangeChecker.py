@@ -1,7 +1,7 @@
 import os
 
 from .DatasetDatabase import DatasetDatabase
-
+import numpy as np
 
 __author__ = 'gm'
 
@@ -40,15 +40,15 @@ class TimeRangeChecker:
         dt = {}
 
         for name in tsnames_list:
-            c = self.db.execute_query("select min(date), min(time) from dataset where name='%s'" % name)
-            res = c.fetchone()
-            date_time = res[0] + "-" + res[1]
+            date_time = self.db.get_first_datetime(name)
             if date_time in dt:
                 dt[date_time] += 1
                 continue
             else:
                 dt[date_time] = 1
-                print(date_time)
+
+        for key, value in sorted(dt.items()):
+            print(key + " " + str(value))
         self.db.disconnect()
 
     def print_max_date_times(self):
@@ -62,9 +62,7 @@ class TimeRangeChecker:
         dt = {}
 
         for name in tsnames_list:
-            c = self.db.execute_query("select max(date), max(time) from dataset where name='%s'" % name)
-            res = c.fetchone()
-            date_time = res[0] + "-" + res[1]
+            date_time = self.db.get_last_datetime(name)
             if date_time in dt:
                 dt[date_time] += 1
                 continue
@@ -79,7 +77,7 @@ class TimeRangeChecker:
         """
         print the start date-time and end date-time of every time-series
         """
-        for key, value in self.get_start_end_points():
+        for key, value in self.get_start_end_points().items():
             print(key + " " + value[0] + "---" + value[1])
 
     def get_start_end_points(self, use_file=False):
@@ -109,7 +107,7 @@ class TimeRangeChecker:
             self.db.disconnect()
             if use_file:
                 with open("date-time-pairs", 'w') as f:
-                    for key, value in dt:
+                    for key, value in dt.items():
                         print(key + "," + value[0] + "," + value[1], file=f)
         else:
             dt = {}
@@ -122,9 +120,16 @@ class TimeRangeChecker:
 
     def get_all_points(self, use_file=False):
         """
+<<<<<<< HEAD
         get all points of every time series. Point is a date-time that te time-series has data for
         returns a dictionary of the form {"time-series name": [d1,d2,d3, ...]}
         dx are of the form "month/day/year-hours:minutes:seconds"
+=======
+        get all points of every time series. Point is a date-time that the time-series has data for
+        returns a dictionary of the form {"time-series name": np.array([d1,d2,d3, ...])}
+        dx are of the form "month/day/year-hours:minutes:seconds"
+        dx are ordered
+>>>>>>> wip
         """
         if not use_file or not os.path.exists("all-date-time-points"):
             self.db = DatasetDatabase(self.db_name)
@@ -158,4 +163,8 @@ class TimeRangeChecker:
                     line = line[:-1]
                     split_line = line.split(",")
                     dt[split_line[0]] = split_line[1:]
+
+        for key, value in dt.items():
+            dt[key] = np.array(value)
         return dt
+
