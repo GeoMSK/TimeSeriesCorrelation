@@ -120,16 +120,10 @@ class TimeRangeChecker:
 
     def get_all_points(self, use_file=False):
         """
-<<<<<<< HEAD
-        get all points of every time series. Point is a date-time that te time-series has data for
-        returns a dictionary of the form {"time-series name": [d1,d2,d3, ...]}
-        dx are of the form "month/day/year-hours:minutes:seconds"
-=======
         get all points of every time series. Point is a date-time that the time-series has data for
         returns a dictionary of the form {"time-series name": np.array([d1,d2,d3, ...])}
         dx are of the form "month/day/year-hours:minutes:seconds"
         dx are ordered
->>>>>>> wip
         """
         if not use_file or not os.path.exists("all-date-time-points"):
             self.db = DatasetDatabase(self.db_name)

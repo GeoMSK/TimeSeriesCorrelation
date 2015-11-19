@@ -50,19 +50,20 @@ class DatasetPlotter:
         """
         plt.figure(figsize=(12, 8))
         plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%m/%d/%Y\n%H:%M:%S'))
-        plt.gca().xaxis.set_major_locator(mdates.HourLocator(interval=6))
+        # plt.gca().xaxis.set_major_locator(mdates.HourLocator(interval=6))
         plt.title("Time Series Duration")
         plt.ylabel("Time Series (sorted) No")
 
         t = 0
         for points in time_series_points:
             dates = points
+            print(dates[-1])
             x = [dt.datetime.strptime(d, '%m/%d/%Y-%H:%M:%S') for d in dates]
             y = [t] * len(x)
             plt.plot(x, y, ",", color="blue")
             t += 1
 
-        plt.ylim([-1, t+1])
+        plt.ylim([-t * 0.1, t + t * 0.1])
 
         plt.show()
 

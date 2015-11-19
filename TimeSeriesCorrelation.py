@@ -90,13 +90,13 @@ def dates(args):
             datetime_pairs = []
             for key, value in point_dic.items():
                 datetime_pairs.append(value)
-            DatasetPlotter.plot_start_end_points(sorted(datetime_pairs, key=lambda x: x[0] + x[-1], reverse=True))
+            DatasetPlotter.plot_start_end_points(sorted(datetime_pairs, key=lambda x: x[0] + x[-1]))
         else:
             point_dic = TimeRangeChecker(args.database_file).get_all_points(use_file=args.use_file)
             points = []
             for key, value in point_dic.items():
                 points.append(value)
-            DatasetPlotter.plot_all_points(sorted(points, key=lambda x: x[0] + x[-1], reverse=True))
+            DatasetPlotter.plot_all_points(sorted(points, key=lambda x: x[0] + x[-1]))
 
 
 def dataset2db(args):
@@ -115,8 +115,11 @@ def calc(args):
     first_datetime = dt.datetime.strptime(db.get_first_datetime(None), '%m/%d/%Y-%H:%M:%S')
     last_datetime = dt.datetime.strptime(db.get_last_datetime(None), '%m/%d/%Y-%H:%M:%S')
     ts_names = db.get_distinct_names()
-    pnum = (last_datetime - first_datetime).seconds
+    delta = last_datetime - first_datetime
+    pnum = delta.days * 3600 * 24 + delta.seconds + 1
     total_points = pnum * len(ts_names)
+    print(first_datetime.strftime("%m/%d/%Y-%H:%M:%S") + " - " + last_datetime.strftime("%m/%d/%Y-%H:%M:%S"))
+    print("delta: " + str(delta))
     print("points per time series: %d" % pnum)
     print("total points in interpolated dataset: " + str(total_points))
     print("Estimated size (4 bytes per point): %d MB" % (total_points * 4 / 1024 / 1024))
