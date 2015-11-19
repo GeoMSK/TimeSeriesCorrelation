@@ -10,8 +10,14 @@ delta_zero = dt.timedelta(seconds=0)
 
 
 class DatasetDB2HDF5:
-
+    """
+    Provides functionality to convert a dataset stored in a sqlite3 database to a hdf5 database.
+    """
     def __init__(self, db_name, hdf5_name):
+        """
+        :param db_name: the sqlite3 database file
+        :param hdf5_name: the hdf5 database file to be created
+        """
         self.db_name = db_name
         self.hdf5_name = hdf5_name
         self.first_datetime = None
@@ -22,7 +28,12 @@ class DatasetDB2HDF5:
         self.last_datetime_of_ts = None  # temp variable, holding the last datetime of a time series
         self.ts = []  # temp variable, holding a time series
 
-    def convert(self):
+    def convert(self, compression_level=None):
+        """
+        convert a dataset stored in a sqlite3 database to a hdf5 database. Data interval in every time series is
+        one second. For those seconds that the dataset has no data we put the previous available data to fill the gaps.
+        """
+        assert compression_level in [None, 1, 2, 3, 4, 5, 6, 7, 8, 9]
         self.db = DatasetDatabase(self.db_name)
         self.db.connect()
 
@@ -32,13 +43,17 @@ class DatasetDB2HDF5:
 
         self.h5 = h5py.File(self.hdf5_name, mode='w')
 
+        i = 1
         for ts_name in self.db.get_distinct_names():  # for every time series
-            self._convert_time_series(ts_name)
+            self._convert_time_series(ts_name, compression_level)
+            if i % 100 == 0:
+                print("processed %d time series" % i)
+            i += 1
 
         self.h5.close()
         self.db.disconnect()
 
-    def _convert_time_series(self, ts_name):
+    def _convert_time_series(self, ts_name, compression_level):
         self.ts = self.db.get_time_series(ts_name).fetchall()
         # ts --> [[date, time, data1, data2], ...]
         gap_filled_ts = []
@@ -73,8 +88,11 @@ class DatasetDB2HDF5:
             self._fill_last_segment(gap_filled_ts)
 
         ts_array = np.array(gap_filled_ts, dtype='float32')
-        self.h5.create_dataset(ts_name, (len(gap_filled_ts),), data=ts_array, dtype='float32', compression="gzip",
-                               compression_opts=9)
+        if compression_level:
+            self.h5.create_dataset(ts_name, (len(gap_filled_ts),), data=ts_array, dtype='float32', compression="gzip",
+                                   compression_opts=compression_level)
+        else:
+            self.h5.create_dataset(ts_name, (len(gap_filled_ts),), data=ts_array, dtype='float32')
 
     def _fill_first_segment(self, gap_filled_ts):
         """
@@ -161,59 +179,3 @@ class DatasetDB2HDF5:
         assert N > 0
         for i in range(N):
             gap_filled_ts.append(data)
-
-            # def convert(self):
-            #     self.db = DatasetDatabase(self.db_name)
-            #     self.db.connect()
-            #
-            #     self.first_datetime = dt.datetime.strptime(self.db.get_first_datetime(None), '%m/%d/%Y-%H:%M:%S')
-            #     self.last_datetime = dt.datetime.strptime(self.db.get_last_datetime(None), '%m/%d/%Y-%H:%M:%S')
-            #
-            #     self.h5 = h5py.File(self.hdf5_name, mode='w')
-            #
-            #     for ts_name in self.db.get_distinct_names():  # for every time series
-            #         self._convert_time_series(ts_name)
-            #
-            #     self.h5.close()
-            #     self.db.disconnect()
-            #
-            # def _convert_time_series(self, ts_name):
-            #     prev_datetime = self.first_datetime
-            #     ts = self.db.get_time_series(ts_name).fetchall()
-            #     # ts --> [[date, time, data1, data2], ...]
-            #     gap_filled_ts = []
-            #
-            #     self.first_datetime_of_ts = dt.datetime.strptime(ts[0][0] + "-" + ts[0][1], '%m/%d/%Y-%H:%M:%S')
-            #     self.last_datetime_of_ts = dt.datetime.strptime(ts[-1][0] + "-" + ts[-1][1], '%m/%d/%Y-%H:%M:%S')
-            #
-            #     if self.first_datetime_of_ts != self.first_datetime:
-            #         prev_data = ts[0][2]
-            #         prev_datetime = prev_datetime - delta1sec
-            #     if self.last_datetime_of_ts != self.last_datetime:
-            #         ts.append([self.last_datetime.date().strftime('%m/%d/%Y'),
-            #                    self.last_datetime.time().strftime('%H:%M:%S'), ts[-1][2]])
-            #
-            #     for row in ts:  # for every row in the current time series
-            #         date = row[0]
-            #         time = row[1]
-            #         cur_data = row[2]
-            #         cur_datetime = dt.datetime.strptime(date + "-" + time, '%m/%d/%Y-%H:%M:%S')
-            #         assert cur_datetime >= prev_datetime
-            #         delta = cur_datetime - prev_datetime
-            #         if delta > delta1sec:  # delta should be zero only if the time series begins at self.first_datetime
-            #             # fill gaps
-            #             for i in range(delta.seconds-1):
-            #                 assert delta.seconds-1 > 0
-            #                 assert prev_data
-            #                 gap_filled_ts.append(prev_data)
-            #
-            #         gap_filled_ts.append(cur_data)
-            #         prev_datetime = cur_datetime
-            #         prev_data = cur_data
-            #     if len(gap_filled_ts) == 172679:
-            #         print(self.first_datetime_of_ts, self.last_datetime_of_ts, ts[-1][0], ts[-1][1], ts[-2][0], ts[-2][1])
-            #     else:
-            #         print("\t", self.first_datetime_of_ts, self.last_datetime_of_ts, ts[-1][0], ts[-1][1], ts[-2][0], ts[-2][1])
-            #     ts_array = np.array(gap_filled_ts, dtype='float32')
-            #     self.h5.create_dataset(ts_name, (len(gap_filled_ts),), data=ts_array, dtype='float32', compression="gzip",
-            #                               compression_opts=9)

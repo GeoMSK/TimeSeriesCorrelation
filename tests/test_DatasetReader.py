@@ -3,8 +3,8 @@ from Dataset.DatasetReader import DatasetReader
 __author__ = 'gm'
 
 
-def test_DatasetReader():
-    dr = DatasetReader("./test_resources/data100.txt")
+def test_DatasetReader(testfiles):
+    dr = DatasetReader(testfiles["data100"])
     dr.open_dataset()
 
     ds = {}

@@ -68,6 +68,9 @@ def main():
                               help="the database file")
     parser_db2h5.add_argument("hdf5_file",
                               help="the HDF5 file")
+    parser_db2h5.add_argument("-c", "--compress", type=int,
+                              help="compress on the fly the HDF5 file, using gzip. Supply a number 1-9. 1 is low"
+                                   "compression, 9 is high")
 
     args = parser.parse_args()
 
@@ -106,7 +109,10 @@ def dataset2db(args):
 
 def db2h5(args):
     conv = DatasetDB2HDF5(args.database_file, args.hdf5_file)
-    conv.convert()
+    if args.compress:
+        conv.convert(compression_level=args.compress)
+    else:
+        conv.convert()
 
 
 def calc(args):

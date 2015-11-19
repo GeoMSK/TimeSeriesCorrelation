@@ -3,13 +3,14 @@ import os
 from Dataset.DatasetConverter import DatasetConverter
 from Dataset.DatasetDatabase import DatasetDatabase
 from Dataset.DatasetDBNormalizer import DatasetDBNormalizer
-
+import pytest
 
 __author__ = 'gm'
 
 
-def test_converter():
-    dc = DatasetConverter("./test_resources/data100.txt", "./test_database.db")
+@pytest.mark.usefixtures("cleandir")
+def test_converter(testfiles):
+    dc = DatasetConverter(testfiles["data100"], "./test_database.db")
     dc.convert()
 
     db = DatasetDatabase("./test_database.db")
