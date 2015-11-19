@@ -136,6 +136,9 @@ class TimeRangeChecker:
                 c = self.db.execute_query("select name, date, time from dataset "
                                           "where name='%s' order by date, time" % name)
 
+                # d = self.db.execute_query("select count(date) from dataset "
+                #                           "where name='%s'" % name).fetchone()[0]
+                # d = int(d)
                 for res in c:
                     name = res[0]
                     date_time = res[1] + "-" + res[2]
@@ -144,7 +147,8 @@ class TimeRangeChecker:
                         dt[name].append(date_time)
                     else:
                         dt[name] = [date_time]
-
+                # print(d, len(dt[name]))
+                # assert d == len(dt[name])
             self.db.disconnect()
             if use_file:
                 with open("all-date-time-points", 'w') as f:

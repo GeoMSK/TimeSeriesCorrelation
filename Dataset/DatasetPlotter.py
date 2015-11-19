@@ -57,7 +57,6 @@ class DatasetPlotter:
         t = 0
         for points in time_series_points:
             dates = points
-            print(dates[-1])
             x = [dt.datetime.strptime(d, '%m/%d/%Y-%H:%M:%S') for d in dates]
             y = [t] * len(x)
             plt.plot(x, y, ",", color="blue")
