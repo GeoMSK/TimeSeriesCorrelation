@@ -13,22 +13,22 @@ class Args:
 @pytest.mark.usefixtures("cleandir")
 def test_dates(testfiles):
     database_file = "dataset100"
-    args = Args(action=print_max_datetimes, range=None, database_file=testfiles[database_file])
+    args = Args(action=print_max_datetimes, range=None, threshold=None, database_file=testfiles[database_file])
     dates(args)
 
-    args = Args(action=print_min_datetimes, range=None, database_file=testfiles[database_file])
+    args = Args(action=print_min_datetimes, range=None, threshold=None, database_file=testfiles[database_file])
     dates(args)
 
-    args = Args(action=print_start_end_datetimes, range=None, database_file=testfiles[database_file])
+    args = Args(action=print_start_end_datetimes, range=None, threshold=None, database_file=testfiles[database_file])
     dates(args)
 
-    args = Args(action=plot_dates, range=None, all=False, use_file=False, database_file=testfiles[database_file])
+    args = Args(action=plot_dates, range=None, threshold=None, all=False, use_file=False, database_file=testfiles[database_file])
     dates(args)
 
-    args = Args(action=plot_dates, range=None, all=True, use_file=False, database_file=testfiles[database_file])
+    args = Args(action=plot_dates, range=None, threshold=None, all=True, use_file=False, database_file=testfiles[database_file])
     dates(args)
 
-    args = Args(action=plot_dates, range='07/08/2015-00:05:12--07/08/2015-00:05:13',
+    args = Args(action=plot_dates, range='07/08/2015-00:05:12--07/08/2015-00:05:13', threshold=None,
                 all=False, use_file=False, database_file=testfiles[database_file])
     dates(args)
 

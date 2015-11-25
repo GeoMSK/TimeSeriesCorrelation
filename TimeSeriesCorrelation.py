@@ -58,6 +58,11 @@ def main():
                               help="Only time series whose points are within start_date-end_date range are considered. "
                                    "format: '%m/%d/%Y-%H:%M:%S--%m/%d/%Y-%H:%M:%S "
                                    "eg. --range '01/01/2016-00:00:00--01/01/2016-20:00:00'")
+    parser_dates.add_argument("--threshold", default=None,
+                              help="ignore time series with less than threshold data points. This can also be a"
+                                   " percentage eg '%50'. This means that time series with data points less than"
+                                   " 0.5 * max-points-in-given-range are ignored. Where this max is the number of"
+                                   " points of the time series with the most points, that fits in the given range")
 
     parser_calc = subparsers.add_parser('calc',
                                         help="calculate total points if we fill each second with data. From the "
@@ -76,6 +81,15 @@ def main():
     parser_db2h5.add_argument("-c", "--compress", type=int, default=None,
                               help="compress on the fly the HDF5 file, using gzip. Supply a number 1-9. 1 is low"
                                    "compression, 9 is high")
+    parser_db2h5.add_argument("--range", default=None,
+                              help="Only time series whose points are within start_date-end_date range are considered. "
+                                   "format: '%m/%d/%Y-%H:%M:%S--%m/%d/%Y-%H:%M:%S "
+                                   "eg. --range '01/01/2016-00:00:00--01/01/2016-20:00:00'")
+    parser_db2h5.add_argument("--threshold", default=None,
+                              help="ignore time series with less than threshold data points. This can also be a"
+                                   " percentage eg '%50'. This means that time series with data points less than"
+                                   " 0.5 * max-points-in-given-range are ignored. Where this max is the number of"
+                                   " points of the time series with the most points, that fits in the given range")
     parser_h5norm = subparsers.add_parser('h5norm',
                                           help="normalize a hdf5 database")
     parser_h5norm.set_defaults(func=h5norm)
@@ -103,18 +117,19 @@ def dates(args):
     elif args.action == print_min_datetimes:
         DatasetDatabase(args.database_file).connect().print_min_date_times()
     elif args.action == print_start_end_datetimes:
-        DatasetDatabase(args.database_file).connect().print_start_end_points(range=args.range)
+        DatasetDatabase(args.database_file).connect().print_start_end_points(range=args.range,
+                                                                             point_threshold=args.threshold)
     elif args.action == plot_dates:
         if not args.all:
             point_dic = DatasetDatabase(args.database_file).connect() \
-                .get_start_end_points(range=args.range, use_file=args.use_file)
+                .get_start_end_points(range=args.range, use_file=args.use_file, point_threshold=args.threshold)
             datetime_pairs = []
             for key, value in point_dic.items():
                 datetime_pairs.append(value)
             DatasetPlotter.plot_start_end_points(sorted(datetime_pairs, key=lambda x: x[0] + x[-1]))
         else:
             point_dic = DatasetDatabase(args.database_file).connect() \
-                .get_all_points(range=args.range, use_file=args.use_file)
+                .get_all_points(range=args.range, use_file=args.use_file, point_threshold=args.threshold)
             points = []
             for key, value in point_dic.items():
                 points.append(value)
@@ -129,7 +144,7 @@ def dataset2db(args):
 def db2h5(args):
     conv = DatasetDB2HDF5(args.database_file, args.hdf5_file)
     if args.compress:
-        conv.convert(compression_level=args.compress)
+        conv.convert(range=args.range, compression_level=args.compress, point_threshold=args.threshold)
     else:
         conv.convert()
 

@@ -29,13 +29,19 @@ class DatasetDB2HDF5:
         self.last_datetime_of_ts = None  # temp variable, holding the last datetime of a time series
         self.ts = []  # temp variable, holding a time series
 
-    def convert(self, range=None, compression_level=None):
+    def convert(self, range=None, compression_level=None, point_threshold=None):
         """
         convert a dataset stored in a sqlite3 database to a hdf5 database. Data interval in every time series is
         one second. For those seconds that the dataset has no data we put the previous available data to fill the gaps.
 
         range is used to filter the time series to write to the new database
         range = [start_date, end_date] date: '%m/%d/%Y-%H:%M:%S'
+
+        point_threshold if not None will determine if a time series name will not be displayed based on
+        the number of data it has.
+        eg. if point_threshold is 100 and a time series has 90 data points then it will not be returned.
+        It can also be a percentage of the max data points it the range specified
+        eg. point_threshold="%50"
         """
         assert compression_level in [None, 1, 2, 3, 4, 5, 6, 7, 8, 9]
         self.db = DatasetDatabase(self.db_name)
@@ -48,7 +54,7 @@ class DatasetDB2HDF5:
         self.h5 = h5py.File(self.hdf5_name, mode='w')
 
         i = 1
-        for ts_name in self.db.get_distinct_names(range=range):
+        for ts_name in self.db.get_distinct_names(range=range, point_threshold=point_threshold):
             self._convert_time_series(ts_name, compression_level)
             if i % 100 == 0:
                 print("processed %d time series" % i)

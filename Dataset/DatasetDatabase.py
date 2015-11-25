@@ -151,33 +151,49 @@ class DatasetDatabase:
 
         return None
 
-    def get_distinct_names(self, range=None):
+    def get_distinct_names(self, range=None, point_threshold=None):
         """
         get all time-series names, filter by range if not None.
         range = [start_date, end_date]
         so a time series name is added only id all of its points are within start_date - end_date
         date format is '%m/%d/%Y-%H:%M:%S'
+
+        point_threshold if not None will determine if a time series name will not be displayed based on
+        the number of data it has.
+        eg. if point_threshold is 100 and a time series has 90 data points then it will not be returned.
+        It can also be a percentage of the max data points it the range specified
+        eg. point_threshold="%50"
         :return: a list with all time-series names
         """
-        if self.is_connected():
-            assert isinstance(self.conn, sql.Connection)
-            c = self.conn.cursor()
-            assert isinstance(c, sql.Cursor)
-            query = "SELECT distinct name FROM dataset"
+        self.assert_connected()
+        query = "SELECT distinct name FROM dataset"
+        c = self.execute_query(query)
+        assert c
 
-            if range:
-                self.start_end_dates = self.get_start_end_points()
-            try:
-                ts_names = [t[0] for t in c.execute(query).fetchall()]
-                if range:
-                    ts_names = list(filter(lambda x: self.time_series_within_range(x, range[0], range[1]), ts_names))
-                return ts_names
-            except sql.IntegrityError as e:
-                self.logger.exception(e)
-        else:
-            raise Exception("Not connected to database")
-
-        return None
+        if range:
+            self.start_end_dates = self.get_start_end_points()
+        ts_names = [t[0] for t in c.fetchall()]
+        if range:
+            ts_names = list(filter(lambda x: self.time_series_within_range(x, range[0], range[1]), ts_names))
+        if point_threshold:
+            assert isinstance(point_threshold, str)
+            maxp = 0
+            ts_lengths = []
+            for ts in ts_names:
+                cur = self.get_num_points(ts)
+                ts_lengths.append([ts, cur])
+                if cur > maxp:
+                    maxp = cur
+            if point_threshold[0] == "%":
+                point_threshold = maxp * float(point_threshold[1:2])/100
+            else:
+                point_threshold = float(point_threshold)
+            print("point threshold = %f" % point_threshold)
+            print("before threshold filtering: %d time-series" % len(ts_lengths))
+            ts_lengths = list(filter(lambda x: x[1] >= point_threshold, ts_lengths))
+            print("after threshold filtering: %d time-series" % len(ts_lengths))
+            ts_names = [x[0] for x in ts_lengths]
+        return ts_names
 
     def time_series_within_range(self, ts_name, start_date, end_date):
         """
@@ -279,7 +295,7 @@ class DatasetDatabase:
             assert isinstance(self.conn, sql.Connection)
         else:
             raise Exception("Not connected to database")
-    
+
     def check(self):
         """
         NOT USED
@@ -336,14 +352,14 @@ class DatasetDatabase:
         for key, value in sorted(dt.items()):
             print(key + " " + str(value))
 
-    def print_start_end_points(self, range=None):
+    def print_start_end_points(self, range=None, point_threshold=None):
         """
         print the start date-time and end date-time of every time-series
         """
         for key, value in self.get_start_end_points(range=range).items():
             print(key + " " + value[0] + "---" + value[1])
 
-    def get_start_end_points(self, range=None, use_file=False):
+    def get_start_end_points(self, range=None, use_file=False, point_threshold=None):
         """
         get the start date-time and end date-time of every time-series
         returns a dictionary of the form {"time-series name": [start_datetime, end_datetime]}
@@ -354,13 +370,13 @@ class DatasetDatabase:
         """
         if not use_file or not os.path.exists("date-time-pairs"):
             self.assert_connected()
-            tsnames_list = self.get_distinct_names(range=range)
+            tsnames_list = self.get_distinct_names(range=range, point_threshold=point_threshold)
 
             dt = {}
 
             for name in tsnames_list:
                 c = self.execute_query("select name, min(date), min(time), max(date), max(time) from dataset "
-                                          "where name='%s'" % name)
+                                       "where name='%s'" % name)
                 res = c.fetchone()
 
                 name = res[0]
@@ -382,7 +398,7 @@ class DatasetDatabase:
                     dt[split_line[0]] = [split_line[1], split_line[2]]
         return dt
 
-    def get_all_points(self, range=None, use_file=False):
+    def get_all_points(self, range=None, use_file=False, point_threshold=None):
         """
         get all points of every time series. Point is a date-time that the time-series has data for
         returns a dictionary of the form {"time-series name": np.array([d1,d2,d3, ...])}
@@ -394,16 +410,16 @@ class DatasetDatabase:
         """
         if not use_file or not os.path.exists("all-date-time-points"):
             self.assert_connected()
-            tsnames_list = self.get_distinct_names(range=range)
+            tsnames_list = self.get_distinct_names(range=range, point_threshold=point_threshold)
 
             dt = {}
 
             for name in tsnames_list:
                 c = self.execute_query("select name, date, time from dataset "
-                                          "where name='%s' order by date, time" % name)
+                                       "where name='%s' order by date, time" % name)
 
                 # d = self.db_name.execute_query("select count(date) from dataset "
-                #                           "where name='%s'" % name).fetchone()[0]
+                # "where name='%s'" % name).fetchone()[0]
                 # d = int(d)
                 for res in c:
                     name = res[0]
@@ -413,8 +429,8 @@ class DatasetDatabase:
                         dt[name].append(date_time)
                     else:
                         dt[name] = [date_time]
-                # print(d, len(dt[name]))
-                # assert d == len(dt[name])
+                        # print(d, len(dt[name]))
+                        # assert d == len(dt[name])
             if use_file:
                 with open("all-date-time-points", 'w') as f:
                     for key, value in dt.items():
@@ -430,3 +446,12 @@ class DatasetDatabase:
         for key, value in dt.items():
             dt[key] = np.array(value)
         return dt
+
+    def get_num_points(self, time_series):
+        """
+        get the number of data points the specified time series has
+        """
+        self.assert_connected()
+        num = self.execute_query("select count(data1) from dataset where name='%s'" % time_series).fetchone()[0]
+        assert num
+        return num
