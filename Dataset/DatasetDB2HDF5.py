@@ -1,4 +1,5 @@
 from .DatasetDatabase import DatasetDatabase
+from Dataset.DatasetDatabase import DATE_FORMAT
 import h5py
 import numpy as np
 import datetime as dt
@@ -28,23 +29,26 @@ class DatasetDB2HDF5:
         self.last_datetime_of_ts = None  # temp variable, holding the last datetime of a time series
         self.ts = []  # temp variable, holding a time series
 
-    def convert(self, compression_level=None):
+    def convert(self, range=None, compression_level=None):
         """
         convert a dataset stored in a sqlite3 database to a hdf5 database. Data interval in every time series is
         one second. For those seconds that the dataset has no data we put the previous available data to fill the gaps.
+
+        range is used to filter the time series to write to the new database
+        range = [start_date, end_date] date: '%m/%d/%Y-%H:%M:%S'
         """
         assert compression_level in [None, 1, 2, 3, 4, 5, 6, 7, 8, 9]
         self.db = DatasetDatabase(self.db_name)
         self.db.connect()
 
         # get the globally first and last date-times (of all time series)
-        self.first_datetime = dt.datetime.strptime(self.db.get_first_datetime(None), '%m/%d/%Y-%H:%M:%S')
-        self.last_datetime = dt.datetime.strptime(self.db.get_last_datetime(None), '%m/%d/%Y-%H:%M:%S')
+        self.first_datetime = dt.datetime.strptime(self.db.get_first_datetime(None), DATE_FORMAT)
+        self.last_datetime = dt.datetime.strptime(self.db.get_last_datetime(None), DATE_FORMAT)
 
         self.h5 = h5py.File(self.hdf5_name, mode='w')
 
         i = 1
-        for ts_name in self.db.get_distinct_names():  # for every time series
+        for ts_name in self.db.get_distinct_names(range=range):
             self._convert_time_series(ts_name, compression_level)
             if i % 100 == 0:
                 print("processed %d time series" % i)
@@ -59,8 +63,8 @@ class DatasetDB2HDF5:
         gap_filled_ts = []
 
         # get the first and last date-times of this time series
-        self.first_datetime_of_ts = dt.datetime.strptime(self.ts[0][0] + "-" + self.ts[0][1], '%m/%d/%Y-%H:%M:%S')
-        self.last_datetime_of_ts = dt.datetime.strptime(self.ts[-1][0] + "-" + self.ts[-1][1], '%m/%d/%Y-%H:%M:%S')
+        self.first_datetime_of_ts = dt.datetime.strptime(self.ts[0][0] + "-" + self.ts[0][1], DATE_FORMAT)
+        self.last_datetime_of_ts = dt.datetime.strptime(self.ts[-1][0] + "-" + self.ts[-1][1], DATE_FORMAT)
 
         # FS: First Segment
         # MS: Middle Segment
@@ -134,7 +138,7 @@ class DatasetDB2HDF5:
             date = row[0]
             time = row[1]
             cur_data = row[2]
-            cur_datetime = dt.datetime.strptime(date + "-" + time, '%m/%d/%Y-%H:%M:%S')
+            cur_datetime = dt.datetime.strptime(date + "-" + time, DATE_FORMAT)
             if prev_datetime is not None:
                 assert cur_datetime > prev_datetime
                 delta = cur_datetime - prev_datetime

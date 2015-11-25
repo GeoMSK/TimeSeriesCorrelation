@@ -21,7 +21,9 @@ def cleandir(request):
 def testfiles():
     f = {
         "data100": "./test_resources/data100.txt",
-        "data10000": "./test_resources/data10000.txt"
+        "data10000": "./test_resources/data10000.txt",
+        "dataset100": "./test_resources/dataset100.db",
+        "h5100": "./test_resources/h5100.db"
     }
     for name in f.keys():
         f[name] = os.path.abspath(f[name])

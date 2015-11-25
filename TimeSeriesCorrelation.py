@@ -2,11 +2,12 @@
 import logging
 import argparse
 import datetime as dt
-from Dataset.TimeRangeChecker import TimeRangeChecker
 from Dataset.DatasetPlotter import DatasetPlotter
 from Dataset.DatasetConverter import DatasetConverter
 from Dataset.DatasetDatabase import DatasetDatabase
 from Dataset.DatasetDB2HDF5 import DatasetDB2HDF5
+from Dataset.DatasetDatabase import DATE_FORMAT
+from Dataset.DatasetDBNormalizer import DatasetDBNormalizer
 
 __author__ = 'gm'
 
@@ -53,6 +54,10 @@ def main():
     parser_dates.add_argument("-f", "--use-file", action="store_true", default=False,
                               help="store the query result in a file so that next time the query is not performed, "
                                    "data are read from the file")
+    parser_dates.add_argument("--range", default=None,
+                              help="Only time series whose points are within start_date-end_date range are considered. "
+                                   "format: '%m/%d/%Y-%H:%M:%S--%m/%d/%Y-%H:%M:%S "
+                                   "eg. --range '01/01/2016-00:00:00--01/01/2016-20:00:00'")
 
     parser_calc = subparsers.add_parser('calc',
                                         help="calculate total points if we fill each second with data. From the "
@@ -68,9 +73,19 @@ def main():
                               help="the database file")
     parser_db2h5.add_argument("hdf5_file",
                               help="the HDF5 file")
-    parser_db2h5.add_argument("-c", "--compress", type=int,
+    parser_db2h5.add_argument("-c", "--compress", type=int, default=None,
                               help="compress on the fly the HDF5 file, using gzip. Supply a number 1-9. 1 is low"
                                    "compression, 9 is high")
+    parser_h5norm = subparsers.add_parser('h5norm',
+                                          help="normalize a hdf5 database")
+    parser_h5norm.set_defaults(func=h5norm)
+    parser_h5norm.add_argument("h5database",
+                               help="the database file to normalize")
+    parser_h5norm.add_argument("h5normalized",
+                               help="the normalizedHDF5 file")
+    parser_h5norm.add_argument("-c", "--compress", type=int, default=None,
+                               help="compress on the fly the HDF5 file, using gzip. Supply a number 1-9. 1 is low"
+                                    "compression, 9 is high")
 
     args = parser.parse_args()
 
@@ -81,21 +96,25 @@ def main():
 
 
 def dates(args):
+    if args.range:
+        args.range = args.range.split("--")
     if args.action == print_max_datetimes:
-        TimeRangeChecker(args.database_file).print_max_date_times()
+        DatasetDatabase(args.database_file).connect().print_max_date_times()
     elif args.action == print_min_datetimes:
-        TimeRangeChecker(args.database_file).print_min_date_times()
+        DatasetDatabase(args.database_file).connect().print_min_date_times()
     elif args.action == print_start_end_datetimes:
-        TimeRangeChecker(args.database_file).print_start_end_points()
+        DatasetDatabase(args.database_file).connect().print_start_end_points(range=args.range)
     elif args.action == plot_dates:
         if not args.all:
-            point_dic = TimeRangeChecker(args.database_file).get_start_end_points(use_file=args.use_file)
+            point_dic = DatasetDatabase(args.database_file).connect() \
+                .get_start_end_points(range=args.range, use_file=args.use_file)
             datetime_pairs = []
             for key, value in point_dic.items():
                 datetime_pairs.append(value)
             DatasetPlotter.plot_start_end_points(sorted(datetime_pairs, key=lambda x: x[0] + x[-1]))
         else:
-            point_dic = TimeRangeChecker(args.database_file).get_all_points(use_file=args.use_file)
+            point_dic = DatasetDatabase(args.database_file).connect() \
+                .get_all_points(range=args.range, use_file=args.use_file)
             points = []
             for key, value in point_dic.items():
                 points.append(value)
@@ -118,8 +137,8 @@ def db2h5(args):
 def calc(args):
     db = DatasetDatabase(args.database_file)
     db.connect()
-    first_datetime = dt.datetime.strptime(db.get_first_datetime(None), '%m/%d/%Y-%H:%M:%S')
-    last_datetime = dt.datetime.strptime(db.get_last_datetime(None), '%m/%d/%Y-%H:%M:%S')
+    first_datetime = dt.datetime.strptime(db.get_first_datetime(None), DATE_FORMAT)
+    last_datetime = dt.datetime.strptime(db.get_last_datetime(None), DATE_FORMAT)
     ts_names = db.get_distinct_names()
     delta = last_datetime - first_datetime
     pnum = delta.days * 3600 * 24 + delta.seconds + 1
@@ -128,9 +147,13 @@ def calc(args):
     print("delta: " + str(delta))
     print("points per time series: %d" % pnum)
     print("total points in interpolated dataset: " + str(total_points))
-    print("Estimated size (4 bytes per point): %d MB" % (total_points * 4 / 1024 / 1024))
+    print("Estimated size (4 bytes per point): %f MB" % (total_points * 4.0 / 1024.0 / 1024.0))
 
     db.disconnect()
+
+
+def h5norm(args):
+    DatasetDBNormalizer.normalize_hdf5(args.h5database, args.h5normalized, args.compress)
 
 
 if __name__ == '__main__':

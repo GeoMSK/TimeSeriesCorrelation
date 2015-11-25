@@ -22,9 +22,5 @@ def test_converter(testfiles):
                              ("07/08/2015", "00:05:13", "9.3714", "1.0"),
                              ("07/08/2015", "00:05:14", "9.3713", "1.0")
                              ]
-
-    normalizer = DatasetDBNormalizer("./test_database.db")
-    normalizer.normalize()
-
     db.disconnect()
     os.remove("./test_database.db")

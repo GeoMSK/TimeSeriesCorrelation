@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import datetime as dt
 import matplotlib.dates as mdates
+from Dataset.DatasetDatabase import DATE_FORMAT
 
 __author__ = 'gm'
 
@@ -30,7 +31,7 @@ class DatasetPlotter:
         t = 0
         for pair in datetime_pairs:
             dates = pair
-            x = [dt.datetime.strptime(d, '%m/%d/%Y-%H:%M:%S') for d in dates]
+            x = [dt.datetime.strptime(d, DATE_FORMAT) for d in dates]
             y = [t, t]
             plt.plot(x, y, color="blue")
             t += 1
@@ -57,7 +58,7 @@ class DatasetPlotter:
         t = 0
         for points in time_series_points:
             dates = points
-            x = [dt.datetime.strptime(d, '%m/%d/%Y-%H:%M:%S') for d in dates]
+            x = [dt.datetime.strptime(d, DATE_FORMAT) for d in dates]
             y = [t] * len(x)
             plt.plot(x, y, ",", color="blue")
             t += 1

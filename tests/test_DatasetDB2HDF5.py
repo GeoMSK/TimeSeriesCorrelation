@@ -1,11 +1,12 @@
-__author__ = 'gm'
-
 import h5py
 import pytest
 import datetime as dt
 from Dataset.DatasetConverter import DatasetConverter
 from Dataset.DatasetDB2HDF5 import DatasetDB2HDF5
 from Dataset.DatasetDatabase import DatasetDatabase
+from Dataset.DatasetDatabase import DATE_FORMAT
+
+__author__ = 'gm'
 
 
 @pytest.mark.usefixtures("cleandir")
@@ -23,8 +24,8 @@ def test(testfiles):
     db = DatasetDatabase(sqlite_db)
     db.connect()
 
-    first_datetime = dt.datetime.strptime(db.get_first_datetime(None), '%m/%d/%Y-%H:%M:%S')
-    last_datetime = dt.datetime.strptime(db.get_last_datetime(None), '%m/%d/%Y-%H:%M:%S')
+    first_datetime = dt.datetime.strptime(db.get_first_datetime(None), DATE_FORMAT)
+    last_datetime = dt.datetime.strptime(db.get_last_datetime(None), DATE_FORMAT)
     delta = last_datetime - first_datetime
     pnum = delta.days * 3600 * 24 + delta.seconds + 1
 
