@@ -142,6 +142,8 @@ def dataset2db(args):
 
 
 def db2h5(args):
+    if args.range:
+        args.range = args.range.split("--")
     conv = DatasetDB2HDF5(args.database_file, args.hdf5_file)
     if args.compress:
         conv.convert(range=args.range, compression_level=args.compress, point_threshold=args.threshold)
