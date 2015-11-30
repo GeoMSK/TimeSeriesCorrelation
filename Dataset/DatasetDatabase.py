@@ -188,7 +188,8 @@ class DatasetDatabase:
                 point_threshold = maxp * float(point_threshold[1:2])/100
             else:
                 point_threshold = float(point_threshold)
-            print("point threshold = %f" % point_threshold)
+            print("max points: %d" % maxp)
+            print("point threshold: %f" % point_threshold)
             print("before threshold filtering: %d time-series" % len(ts_lengths))
             ts_lengths = list(filter(lambda x: x[1] >= point_threshold, ts_lengths))
             print("after threshold filtering: %d time-series" % len(ts_lengths))
