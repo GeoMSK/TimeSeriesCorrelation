@@ -1,6 +1,7 @@
 from TimeSeriesCorrelation import *
 import pytest
 import os
+
 __author__ = 'gm'
 
 
@@ -22,15 +23,16 @@ def test_dates(testfiles):
     args = Args(action=print_start_end_datetimes, range=None, threshold=None, database_file=testfiles[database_file])
     dates(args)
 
-    args = Args(action=plot_dates, range=None, threshold=None, all=False, use_file=False, database_file=testfiles[database_file])
-    dates(args)
-
-    args = Args(action=plot_dates, range=None, threshold=None, all=True, use_file=False, database_file=testfiles[database_file])
-    dates(args)
-
-    args = Args(action=plot_dates, range='07/08/2015-00:05:12--07/08/2015-00:05:13', threshold=None,
-                all=False, use_file=False, database_file=testfiles[database_file])
-    dates(args)
+    # uncomment to enable plot_dates testing
+    # args = Args(action=plot_dates, range=None, threshold=None, all=False, use_file=False, database_file=testfiles[database_file])
+    # dates(args)
+    #
+    # args = Args(action=plot_dates, range=None, threshold=None, all=True, use_file=False, database_file=testfiles[database_file])
+    # dates(args)
+    #
+    # args = Args(action=plot_dates, range='07/08/2015-00:05:12--07/08/2015-00:05:13', threshold=None,
+    #             all=False, use_file=False, database_file=testfiles[database_file])
+    # dates(args)
 
 
 @pytest.mark.usefixtures("cleandir")
@@ -43,7 +45,7 @@ def test_dataset2db(testfiles):
 
 @pytest.mark.usefixtures("cleandir")
 def test_db2h5(testfiles):
-    args = Args(database_file=testfiles["dataset100"], hdf5_file="./test_hdf.db", compress=None)
+    args = Args(database_file=testfiles["dataset100"], hdf5_file="./test_hdf.db", compress=None, range=None)
     db2h5(args)
 
     assert os.path.exists("./test_hdf.db")
@@ -61,4 +63,3 @@ def test_h5norm(testfiles):
     h5norm(args)
 
     assert os.path.exists("testh5.db")
-

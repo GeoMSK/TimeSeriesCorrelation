@@ -1,7 +1,7 @@
-__author__ = 'gm'
-
 import numpy as np
 from Dataset.DatasetH5 import DatasetH5
+
+__author__ = 'gm'
 
 
 class PruningMatrix:

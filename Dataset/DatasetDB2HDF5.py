@@ -14,6 +14,7 @@ class DatasetDB2HDF5:
     """
     Provides functionality to convert a dataset stored in a sqlite3 database to a hdf5 database.
     """
+
     def __init__(self, db_name, hdf5_name):
         """
         :param db_name: the sqlite3 database file

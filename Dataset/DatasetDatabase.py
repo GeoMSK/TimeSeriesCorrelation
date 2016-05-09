@@ -185,7 +185,7 @@ class DatasetDatabase:
                 if cur > maxp:
                     maxp = cur
             if point_threshold[0] == "%":
-                point_threshold = maxp * float(point_threshold[1:2])/100
+                point_threshold = maxp * float(point_threshold[1:2]) / 100
             else:
                 point_threshold = float(point_threshold)
             print("max points: %d" % maxp)
@@ -296,22 +296,6 @@ class DatasetDatabase:
             assert isinstance(self.conn, sql.Connection)
         else:
             raise Exception("Not connected to database")
-
-    def check(self):
-        """
-        NOT USED
-        assert that every time series in table dataset of the database as the same min(time)
-        """
-        self.assert_connected()
-        tsnames_list = self.db_name.get_distinct_names()
-
-        c = self.db_name.execute_query("select min(time) from dataset where name='%s'" % tsnames_list.pop(0))
-        prev = c.fetchone()
-        for name in tsnames_list:
-            c = self.db_name.execute_query("select min(time) from dataset where name='%s'" % name)
-            cur = c.fetchone()
-            assert prev == cur
-            # prev = cur
 
     def print_min_date_times(self):
         """
