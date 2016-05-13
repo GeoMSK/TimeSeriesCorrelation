@@ -52,3 +52,9 @@ class DatasetH5:
         if k > len(fft):
             k = len(fft)
         return fft[0:k]
+
+    def close(self):
+        """
+        close the hdf5 database
+        """
+        self.f.close()

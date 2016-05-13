@@ -17,7 +17,7 @@ class Caching:
         :type cache_size: int
         """
         self.pm = pruning_matrix
-        self.dataset_name = dataset_path
+        self.dataset_path = dataset_path
         self.cache_size = cache_size
         self.ds = DatasetH5(dataset_path)
         self.batches = [[x for x in range(pruning_matrix.shape[0])]]
