@@ -38,7 +38,7 @@ class DatasetH5:
 
     def compute_fourier(self, time_series: str, k: int):
         """
-        compute the fourier transform of the given time-series, return only the k coefficients in a list
+        compute the fourier transform of the given time-series, return only the k coefficients in a list.
         time-series may either be the name of the time series or the index of self.ts_names
         """
         assert isinstance(time_series, str) or isinstance(time_series, int)

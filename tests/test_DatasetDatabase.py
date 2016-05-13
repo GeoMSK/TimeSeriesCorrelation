@@ -1,10 +1,9 @@
 from Dataset.DatasetDatabase import DatasetDatabase
-
-__author__ = 'gm'
-
 import sqlite3 as sql
 import pytest
 import os
+
+__author__ = 'gm'
 
 
 @pytest.mark.usefixtures("cleandir")
@@ -62,5 +61,3 @@ def test_DatasetDatabase():
     assert db.conn is None
 
     os.remove(test_db_filename)
-
-

@@ -5,15 +5,15 @@ __author__ = 'gm'
 
 
 class PruningMatrix:
-    def __init__(self, h5dataset_name):
+    def __init__(self, h5dataset_name: str):
         self.h5dataset_name = h5dataset_name
         self.pruning_matrix = None
 
-    def compute_pruning_matrix(self, k, T):
+    def compute_pruning_matrix(self, k: int, T: float):
         """
-        compute the pruning matrix for the given hdf5 dataset
-        use only k fourier coefficients for every time-series to perform the computation
-        T is the threshold
+        compute the pruning matrix for the given hdf5 dataset.
+        use only k fourier coefficients for every time-series to perform the computation.
+        T is the threshold.
         """
         with DatasetH5(self.h5dataset_name) as ds:
             N = len(ds)
