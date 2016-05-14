@@ -9,11 +9,11 @@ class PruningMatrix:
         self.h5dataset_name = h5dataset_name
         self.pruning_matrix = None
 
-    def compute_pruning_matrix(self, k: int, T: float):
+    def compute_pruning_matrix(self, k: int, T: float) -> np.ndarray:
         """
         compute the pruning matrix for the given hdf5 dataset.
         use only k fourier coefficients for every time-series to perform the computation.
-        T is the threshold.
+        T is the threshold. returns the pruning matrix as a numpy array
         """
         with DatasetH5(self.h5dataset_name) as ds:
             N = len(ds)
@@ -31,4 +31,5 @@ class PruningMatrix:
                 for j in range(N):
                     dk = np.linalg.norm(fourier[i] - fourier[j])
                     self.pruning_matrix[i][j] = 1 if dk <= (2 * m * (1 - T)) ** (1 / 2) else 0
+        return self.pruning_matrix
 

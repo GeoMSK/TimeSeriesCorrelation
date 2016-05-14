@@ -1,3 +1,4 @@
+import logging
 from Caching import Caching
 from PruningMatrix import PruningMatrix
 import pickle
@@ -7,6 +8,7 @@ __author__ = 'gm'
 
 
 def test_Caching(testfiles):
+    logging.basicConfig(level=logging.DEBUG)
     name = testfiles["h5100"]
     # name = "/home/george/msc/workspaces/PyCharmWorkspace/TimeSeriesCorrelation/test_resources/h5100.db"
     pm = PruningMatrix(name)
@@ -18,4 +20,4 @@ def test_Caching(testfiles):
     for b in c.batches:
         print(b)
 
-    assert False
+    assert True
