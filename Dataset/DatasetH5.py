@@ -10,7 +10,7 @@ class DatasetH5:
         self.name = dataset_name
         self.ts_names = []
         assert os.path.exists(dataset_name)
-        self.f = h5py.File(self.name, 'r')
+        self.f = h5py.File(self.name, 'a')
         for ts in self.f:
             self.ts_names.append(ts)
 
@@ -36,10 +36,11 @@ class DatasetH5:
     def __iter__(self):
         return self.f.__iter__()
 
-    def compute_fourier(self, time_series, k: int):
+    def compute_fourier(self, time_series, k: int, disable_store=False):
         """
         compute the fourier transform of the given time-series, return only the k coefficients in a list.
         time-series may either be the name of the time series or the index of self.ts_names
+        disable_store controls whether the computed coefficients will be store and read from the hdf5 database
         """
         assert isinstance(time_series, str) or isinstance(time_series, int)
         assert isinstance(k, int)
@@ -47,10 +48,21 @@ class DatasetH5:
         if isinstance(time_series, int):
             time_series = self.ts_names[time_series]
 
+        if not disable_store:
+            coeff_db = h5py.File(self.name.rstrip(".h5") + "_coeff.h5", "a")
+            ts_coeff = coeff_db.get(time_series)
+            if ts_coeff is not None:
+                if k > len(ts_coeff):
+                    k = len(ts_coeff)
+                return ts_coeff[0:k]
+
         d = self.f[time_series]
         fft = np.fft.fft(d)  # TODO: pad with zeros to reach length power of 2, needed ??
         if k > len(fft):
             k = len(fft)
+        if not disable_store:
+            coeff_db.create_dataset(time_series, (len(fft),), data=fft, compression="gzip", compression_opts=9)
+            coeff_db.close()
         return fft[0:k]
 
     def close(self):
