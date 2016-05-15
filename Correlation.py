@@ -24,7 +24,7 @@ class Correlation:
 
     def __load_ts_to_cache(self, ts: int):
         assert isinstance(ts, int)
-        if self.cache[ts] is not None:
+        if self.cache[ts] is None:
             self.cache[ts] = self.ds[ts].value
 
     def __clear_cache(self):
@@ -76,8 +76,10 @@ class Correlation:
             self.__load_batch_to_cache(batch)
             # compute correlation of time-series within the batch
             for i in range(len(batch)):
+                ts_i = batch[i]
                 for j in range(i + 1, len(batch)):
-                    self.__correlate(self.cache[batch[i]], self.cache[batch[j]])
+                    ts_j = batch[j]
+                    self.__correlate(self.cache[ts_i], self.cache[ts_j])
 
             # fetch one by one remaining time-series in other batches and compute correlation with every
             # time-series in the current batch
@@ -88,20 +90,28 @@ class Correlation:
                     possibly_correlated = self.__get_edges(batch, ts_i)
                     if len(possibly_correlated) > 0:
                         self.__load_ts_to_cache(ts_i)
-                        for j in possibly_correlated:  # for every ts in current batch that is possibly correlated with the newly cached ts
-                            ts_j = batch[j]
+                        for ts_j in possibly_correlated:  # for every ts in current batch that is possibly correlated with the newly cached ts
                             if self.pruning_matrix[ts_i][ts_j] == 1:  # check pruning matrix
                                 self.__correlate(self.cache[ts_i], self.cache[ts_j])
-                self.__clear_cache()
+            self.__clear_cache()
         return self.correlation_matrix
 
     def __correlate(self, t1, t2):
         assert t1 is not None
         assert t2 is not None
 
-    def __get_edges(self, current_batch, ts) -> list:
+    def __get_edges(self, current_batch: list, ts: int) -> list:
+        """
+        find the "edges" in the Pruning Matrix that the given ts has with every other ts in current batch
+        :param current_batch: the batch whose time-series will be checked for connection with given ts
+        :type current_batch: list
+        :param ts: the time-series to be checked for connection with ts in the batch
+        :type ts: int
+        :return: a list all time-series connected to the given one
+        :rtype: list
+        """
         edges = []
-        for j in range(len(current_batch)):  # for every ts in current batch
-            if self.pruning_matrix[current_batch[j]][ts] == 1:
-                edges.append(ts)
+        for i in range(len(current_batch)):  # for every ts in current batch
+            if self.pruning_matrix[current_batch[i]][ts] == 1:
+                edges.append(current_batch[i])
         return edges
