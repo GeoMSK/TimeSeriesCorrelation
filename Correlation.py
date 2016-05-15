@@ -18,16 +18,25 @@ class Correlation:
         self.cache = [None] * len(self.ds)
 
     def __load_batch_to_cache(self, batch: list):
+        """
+        loads given batch to the cache
+        """
         assert isinstance(batch, list)
         for ts in batch:
             self.__load_ts_to_cache(ts)
 
     def __load_ts_to_cache(self, ts: int):
+        """
+        loads given time-series to the cache
+        """
         assert isinstance(ts, int)
         if self.cache[ts] is None:
             self.cache[ts] = self.ds[ts].value
 
     def __clear_cache(self):
+        """
+        clears the cache
+        """
         self.cache = [None] * len(self.ds)
 
     def __get_pruning_matrix(self, k: int, T: float, recompute=False) -> np.ndarray:
@@ -59,8 +68,8 @@ class Correlation:
     def find_correlations(self, k: int, T: float, B: int):
         """
         find correlations between timeseries of the given dataset
-        :param k: the number of fourier coefficients to use
-        in the PruningMatrix
+
+        :param k: the number of fourier coefficients to use in the PruningMatrix
         :type k: int
         :param T: the threshold to use in the PruningMatrix
         :type T: float
@@ -96,13 +105,17 @@ class Correlation:
             self.__clear_cache()
         return self.correlation_matrix
 
-    def __correlate(self, t1, t2):
+    def __correlate(self, t1: int, t2: int) -> float:
+        """
+        compute the correlation between time-series t1 and t2
+        """
         assert t1 is not None
         assert t2 is not None
 
     def __get_edges(self, current_batch: list, ts: int) -> list:
         """
         find the "edges" in the Pruning Matrix that the given ts has with every other ts in current batch
+
         :param current_batch: the batch whose time-series will be checked for connection with given ts
         :type current_batch: list
         :param ts: the time-series to be checked for connection with ts in the batch
@@ -115,3 +128,28 @@ class Correlation:
             if self.pruning_matrix[current_batch[i]][ts] == 1:
                 edges.append(current_batch[i])
         return edges
+
+    def compute_fourrier_coeff_for_ts_pair(self, ts1: int, ts2: int, e: float):
+        """
+        Compute that many fourier coefficients for time-series ts1 and ts2, so that the approximation error is <= e
+
+        :param ts1: the time series to compute the fourier coefficients for
+        :type ts1: int
+        :param e: the approximation error bound the user wants to set
+        :type e: float
+        :return: the number of coefficients needed to satisfy the error bound and the coefficients
+        :rtype: int, np.ndarray, np.ndarray
+        """
+        k = 0
+        fft1 = self.ds.compute_fourier(ts1, self.ds[ts1])
+        fft2 = self.ds.compute_fourier(ts2, self.ds[ts2])
+        s1 = 0
+        s2 = 0
+        while k < max(len(self.ds[ts1]), len(self.ds[ts1])):
+            k += 1
+            i = k - 1
+            s1 += 2 * (abs(fft1[i]) ** 2)
+            s2 += 2 * (abs(fft2[i]) ** 2)
+            if min(s1, s2) >= 1 - (e / 2):
+                break
+        return k, fft1[0:k], fft2[0:k]

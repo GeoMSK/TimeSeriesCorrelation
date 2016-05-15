@@ -36,7 +36,7 @@ class DatasetH5:
     def __iter__(self):
         return self.f.__iter__()
 
-    def compute_fourier(self, time_series: str, k: int):
+    def compute_fourier(self, time_series, k: int):
         """
         compute the fourier transform of the given time-series, return only the k coefficients in a list.
         time-series may either be the name of the time series or the index of self.ts_names
