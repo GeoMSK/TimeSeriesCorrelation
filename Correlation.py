@@ -2,6 +2,7 @@ from PruningMatrix import PruningMatrix
 from Caching import Caching
 from Dataset.DatasetH5 import DatasetH5
 import numpy as np
+import logging
 
 __author__ = 'gm'
 
@@ -65,7 +66,7 @@ class Correlation:
         self.batches = c.calculate_batches()
         return self.batches
 
-    def find_correlations(self, k: int, T: float, B: int):
+    def find_correlations(self, k: int, T: float, B: int, recompute=False):
         """
         find correlations between timeseries of the given dataset
 
@@ -78,9 +79,14 @@ class Correlation:
         :return: the correlation matrix
         :rtype: np.ndarray
         """
-        self.__get_pruning_matrix(k, T)
-        self.__get_batches(B)
+        logging.info("Begin computation of Pruning Matrix...")
+        self.__get_pruning_matrix(k, T, recompute)
+        logging.info("Begin computation of Batches...")
+        self.__get_batches(B, recompute)
+        bno = 0
         for b in range(len(self.batches)):
+            bno += 1
+            logging.info("Begin processing batch %d" % bno)
             batch = self.batches[b]
             self.__load_batch_to_cache(batch)
             # compute correlation of time-series within the batch
@@ -111,6 +117,8 @@ class Correlation:
         """
         assert t1 is not None
         assert t2 is not None
+        k, fft1, fft2 = self.compute_fourrier_coeff_for_ts_pair(t1, t2)
+        print("found k: %d" % k)
 
     def __get_edges(self, current_batch: list, ts: int) -> list:
         """

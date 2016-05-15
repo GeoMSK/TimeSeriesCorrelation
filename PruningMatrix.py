@@ -1,4 +1,5 @@
 import numpy as np
+import matplotlib.pyplot as plt
 from Dataset.DatasetH5 import DatasetH5
 
 __author__ = 'gm'
@@ -27,9 +28,34 @@ class PruningMatrix:
                 assert len(coeff) == k
                 fourier.append(np.array(coeff))
             # compute the pruning matrix
+            # dk = 0
             for i in range(N):
+                # fi = fourier[i]
                 for j in range(N):
+                    # fj = fourier[j]
+                    # for w in range(k):
+                    #     dk += (fi[w] - fj[w]) * np.conjugate(fi[w] - fj[w])
+                    # dk **= 1 / 2
                     dk = np.linalg.norm(fourier[i] - fourier[j])
-                    self.pruning_matrix[i][j] = 1 if dk <= (2 * m * (1 - T)) ** (1 / 2) else 0
-        return self.pruning_matrix
+                    t = (2 * m * (1 - T)) ** (1 / 2)
+                    self.pruning_matrix[i][j] = 1 if dk <= t else 0
+                    # print(str(dk) + " " + str((2 * m * (1 - T)) ** (1 / 2)))
 
+                    # with DatasetH5("database1.h5") as f:
+                    #     plt.figure(1)
+                    #
+                    #     plt.subplot(211)
+                    #     plt.title("dk=%d  "
+                    #               "T=%.2f  "
+                    #               "m=%d  "
+                    #               "%d<=%d ??" % (dk, T, m, dk, t))
+                    #     plt.plot(f[i])
+                    #     plt.plot(f[j])
+                    #
+                    #     plt.subplot(212)
+                    #     plt.plot(ds[i])
+                    #     plt.plot(ds[j])
+                    #
+                    #     plt.show()
+                    #     plt.close()
+        return self.pruning_matrix
