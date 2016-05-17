@@ -8,15 +8,22 @@ __author__ = 'gm'
 
 
 class Correlation:
-    def __init__(self, dataset_path: str):
-        self.dataset_path = dataset_path
-        self.ds = DatasetH5(dataset_path)
+    def __init__(self, normalized_f_dataset_path: str, t_dataset_path: str):
+        """
+        :param normalized_f_dataset_path: normalized dataset in the frequency domain
+        :param t_dataset_path: dataset in the time domain
+        """
+        self.norm_f_dataset_path = normalized_f_dataset_path
+        self.t_dataset_path = t_dataset_path
+        self.f_ds = DatasetH5(normalized_f_dataset_path)
+        self.t_ds = DatasetH5(t_dataset_path)
         self.pruning_matrix = None
         """:type pruning_matrix: np.ndarray """
         self.batches = None
         """:type batches: list"""
-        self.correlation_matrix = np.zeros(shape=(len(self.ds), len(self.ds)), dtype="float", order="C")
-        self.cache = [None] * len(self.ds)
+        self.correlation_matrix = np.zeros(shape=(len(self.f_ds), len(self.f_ds)), dtype="float", order="C")
+        self.f_cache = [None] * len(self.f_ds)
+        self.t_cache = [None] * len(self.f_ds)
 
     def __load_batch_to_cache(self, batch: list):
         """
@@ -31,14 +38,17 @@ class Correlation:
         loads given time-series to the cache
         """
         assert isinstance(ts, int)
-        if self.cache[ts] is None:
-            self.cache[ts] = self.ds[ts].value
+        if self.f_cache[ts] is None:
+            self.f_cache[ts] = self.f_ds[ts].value
+        if self.t_cache[ts] is None:
+            self.t_cache[ts] = self.t_ds[ts].value
 
     def __clear_cache(self):
         """
         clears the cache
         """
-        self.cache = [None] * len(self.ds)
+        self.f_cache = [None] * len(self.f_ds)
+        self.t_cache = [None] * len(self.f_ds)
 
     def __get_pruning_matrix(self, k: int, T: float, recompute=False) -> np.ndarray:
         """
@@ -48,7 +58,7 @@ class Correlation:
         """
         if self.pruning_matrix is not None and recompute is False:
             return self.pruning_matrix
-        pmatrix = PruningMatrix(self.dataset_path)
+        pmatrix = PruningMatrix(self.norm_f_dataset_path)
         self.pruning_matrix = pmatrix.compute_pruning_matrix(k, T)
         return self.pruning_matrix
 
@@ -62,7 +72,7 @@ class Correlation:
         assert self.pruning_matrix is not None
         if self.batches is not None and recompute is False:
             return self.batches
-        c = Caching(self.pruning_matrix, self.dataset_path, cache_capacity)
+        c = Caching(self.pruning_matrix, self.norm_f_dataset_path, cache_capacity)
         self.batches = c.calculate_batches()
         return self.batches
 
@@ -94,7 +104,7 @@ class Correlation:
                 ts_i = batch[i]
                 for j in range(i + 1, len(batch)):
                     ts_j = batch[j]
-                    self.__correlate(self.cache[ts_i], self.cache[ts_j])
+                    self.__correlate(self.f_cache[ts_i], self.f_cache[ts_j])
 
             # fetch one by one remaining time-series in other batches and compute correlation with every
             # time-series in the current batch
@@ -107,18 +117,29 @@ class Correlation:
                         self.__load_ts_to_cache(ts_i)
                         for ts_j in possibly_correlated:  # for every ts in current batch that is possibly correlated with the newly cached ts
                             if self.pruning_matrix[ts_i][ts_j] == 1:  # check pruning matrix
-                                self.__correlate(self.cache[ts_i], self.cache[ts_j])
+                                self.__correlate(self.f_cache[ts_i], self.f_cache[ts_j])
             self.__clear_cache()
         return self.correlation_matrix
 
-    def __correlate(self, t1: int, t2: int) -> float:
+    def __correlate(self, t1: int, t2: int, e: float) -> float:
         """
         compute the correlation between time-series t1 and t2
         """
         assert t1 is not None
         assert t2 is not None
-        k, fft1, fft2 = self.compute_fourrier_coeff_for_ts_pair(t1, t2)
+        k, fft1, fft2 = self.compute_fourrier_coeff_for_ts_pair(t1, t2, e)
         print("found k: %d" % k)
+
+    def __true_correlation(self, t1: int, t2: int):
+        """
+        computer the true correlation between two time-series. That is the euclidean distance between them
+        """
+        assert t1 is not None
+        assert t2 is not None
+        ts1 = self.t_cache[t1]
+        ts2 = self.t_cache[t2]
+        euclidean_distance = np.linalg.norm(ts1-ts2)
+        return euclidean_distance
 
     def __get_edges(self, current_batch: list, ts: int) -> list:
         """
@@ -149,11 +170,11 @@ class Correlation:
         :rtype: int, np.ndarray, np.ndarray
         """
         k = 0
-        fft1 = self.ds.compute_fourier(ts1, self.ds[ts1])
-        fft2 = self.ds.compute_fourier(ts2, self.ds[ts2])
+        fft1 = self.f_ds.compute_fourier(ts1, self.f_ds[ts1])
+        fft2 = self.f_ds.compute_fourier(ts2, self.f_ds[ts2])
         s1 = 0
         s2 = 0
-        while k < max(len(self.ds[ts1]), len(self.ds[ts1])):
+        while k < max(len(self.f_ds[ts1]), len(self.f_ds[ts1])):
             k += 1
             i = k - 1
             s1 += 2 * (abs(fft1[i]) ** 2)

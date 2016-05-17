@@ -28,3 +28,14 @@ def test_get_edges(testfiles):
     assert c._Correlation__get_edges(batch, 1) == [1]
     assert c._Correlation__get_edges(batch, 2) == [0, 2]
 
+
+def test_true_correlation(testfiles):
+    name = testfiles["h5100"]  # we just need valid names to instantiate Correlation, the data is not used
+    c = Correlation(name, name)
+
+    c.t_cache[0] = np.array([3, 4])
+    c.t_cache[1] = np.array([1, 2])
+
+    euclidean_distance = c._Correlation__true_correlation(0, 1)
+
+    assert euclidean_distance == 8 ** 0.5
