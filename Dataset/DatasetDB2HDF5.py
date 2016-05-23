@@ -40,8 +40,8 @@ class DatasetDB2HDF5:
 
         point_threshold if not None will determine if a time series name will not be displayed based on
         the number of data it has.
-        eg. if point_threshold is 100 and a time series has 90 data points then it will not be returned.
-        It can also be a percentage of the max data points it the range specified
+        eg. if point_threshold is 100 and a time series has 90 data points then it will be discarded.
+        It can also be a percentage of the max data points in the range specified
         eg. point_threshold="%50"
         """
         assert compression_level in [None, 1, 2, 3, 4, 5, 6, 7, 8, 9]

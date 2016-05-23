@@ -76,7 +76,7 @@ class DatasetDBNormalizer:
         h5_norm = h5py.File(h5db_normalized, mode='w')
 
         for ts in h5:
-            ts_norm = DatasetDBNormalizer._normalize_time_series(h5[ts][:])
+            ts_norm = DatasetDBNormalizer.normalize_time_series(h5[ts][:])
             if compression_level:
                 h5_norm.create_dataset(ts, (len(ts_norm),), data=ts_norm, dtype='float32', compression="gzip",
                                        compression_opts=compression_level)
@@ -86,7 +86,7 @@ class DatasetDBNormalizer:
         h5_norm.close()
 
     @staticmethod
-    def _normalize_time_series(time_series_data: np.array):
+    def normalize_time_series(time_series_data: np.array):
         """
         normalize an array of float values
         :param time_series_data: a numpy array with float values

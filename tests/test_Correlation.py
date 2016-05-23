@@ -33,9 +33,19 @@ def test_true_correlation(testfiles):
     name = testfiles["h5100"]  # we just need valid names to instantiate Correlation, the data is not used
     c = Correlation(name, name)
 
-    c.t_cache[0] = np.array([3, 4])
-    c.t_cache[1] = np.array([1, 2])
+    a = np.array([3, 4])
+    b = np.array([1, 2])
 
-    euclidean_distance = c._Correlation__true_correlation(0, 1)
+    m1 = np.mean(a)
+    m2 = np.mean(b)
+    s1 = np.std(a)
+    s2 = np.std(b)
 
-    assert euclidean_distance == 8 ** 0.5
+    c.t_cache[0] = (a-np.mean(a))/np.std(a)
+    c.t_cache[1] = (b-np.mean(b))/np.std(b)
+
+    cor = (((3-m1)/s1)*((1-m2)/s2) + ((4-m1)/s1)*((2-m2)/s2)) / 2
+
+    pearson_correlation = c._Correlation__true_correlation(0, 1)
+
+    assert pearson_correlation == cor

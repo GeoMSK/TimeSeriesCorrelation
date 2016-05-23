@@ -1,6 +1,7 @@
 from PruningMatrix import PruningMatrix
 from Caching import Caching
 from Dataset.DatasetH5 import DatasetH5
+from Dataset.DatasetDBNormalizer import DatasetDBNormalizer
 import numpy as np
 import logging
 
@@ -132,14 +133,14 @@ class Correlation:
 
     def __true_correlation(self, t1: int, t2: int):
         """
-        computer the true correlation between two time-series. That is the euclidean distance between them
+        computer the true correlation between two time-series. That is the pearson correlation between them
         """
         assert t1 is not None
         assert t2 is not None
         ts1 = self.t_cache[t1]
         ts2 = self.t_cache[t2]
-        euclidean_distance = np.linalg.norm(ts1-ts2)
-        return euclidean_distance
+
+        return np.average(ts1 * ts2)  # ts1 and ts2 should be already normalized
 
     def __get_edges(self, current_batch: list, ts: int) -> list:
         """
