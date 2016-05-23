@@ -9,15 +9,15 @@ def test_Correlation(testfiles):
     logging.basicConfig(level=logging.DEBUG)
     name = testfiles["h5100"]
     # name = "/home/george/msc/workspaces/PyCharmWorkspace/TimeSeriesCorrelation/test_resources/h5100.db"
-    c = Correlation(name)
-    correlation_matrix = c.find_correlations(1, 0.7, 20)
+    c = Correlation(name, name)
+    correlation_matrix = c.find_correlations(1, 0.7, 20, 0.04)
 
     assert True
 
 
 def test_get_edges(testfiles):
     name = testfiles["h5100"]  # doesn't matter for this test
-    c = Correlation(name)
+    c = Correlation(name, name)
     batch = [0, 1, 2]
     c.pruning_matrix = np.array([[1, 0, 1],
                                  [0, 1, 0],
@@ -41,8 +41,8 @@ def test_true_correlation(testfiles):
     s1 = np.std(a)
     s2 = np.std(b)
 
-    c.t_cache[0] = (a-np.mean(a))/np.std(a)
-    c.t_cache[1] = (b-np.mean(b))/np.std(b)
+    c.orig_cache[0] = (a - np.mean(a)) / np.std(a)
+    c.orig_cache[1] = (b - np.mean(b)) / np.std(b)
 
     cor = (((3-m1)/s1)*((1-m2)/s2) + ((4-m1)/s1)*((2-m2)/s2)) / 2
 

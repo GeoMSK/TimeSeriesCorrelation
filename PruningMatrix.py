@@ -42,24 +42,24 @@ class PruningMatrix:
                     self.pruning_matrix[i][j] = 1 if dk <= t else 0
                     # print(str(dk) + " " + str((2 * m * (1 - T)) ** (1 / 2)))
 
-                    with DatasetH5("database1.h5") as f:
-                        plt.figure(1)
-
-                        plt.subplot(211)
-                        plt.title("corr=%.2f "
-                                  "dk=%d  "
-                                  "T=%.2f  "
-                                  "m=%d  "
-                                  "%d<=%d ??" % (np.average(DatasetDBNormalizer.normalize_time_series(f[i]) *
-                                                            DatasetDBNormalizer.normalize_time_series(f[j])),
-                                                 dk, T, m, dk, t))
-                        plt.plot(f[i])
-                        plt.plot(f[j])
-
-                        plt.subplot(212)
-                        plt.plot(ds[i])
-                        plt.plot(ds[j])
-
-                        plt.show()
-                        plt.close()
+                    # with DatasetH5("./test_resources/database1.h5") as f:
+                    #     plt.figure(1)
+                    #
+                    #     plt.subplot(211)
+                    #     plt.title("corr=%.2f "
+                    #               "dk=%d  "
+                    #               "T=%.2f  "
+                    #               "m=%d  "
+                    #               "%d<=%d ??" % (np.average(DatasetDBNormalizer.normalize_time_series(f[i]) *
+                    #                                         DatasetDBNormalizer.normalize_time_series(f[j])),
+                    #                              dk, T, m, dk, t))
+                    #     plt.plot(f[i])
+                    #     plt.plot(f[j])
+                    #
+                    #     plt.subplot(212)
+                    #     plt.plot(ds[i])
+                    #     plt.plot(ds[j])
+                    #
+                    #     plt.show()
+                    #     plt.close()
         return self.pruning_matrix
