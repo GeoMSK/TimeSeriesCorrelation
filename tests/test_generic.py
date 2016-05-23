@@ -47,21 +47,13 @@ def test_corr():
     s2 = np.std(t2)
 
     c1 = corr(t1, t2)
-    c2 = (((4-m1)/s1)*((3-m2)/s2) + ((8-m1)/s1)*((7-m2)/s2) + ((12-m1)/s1)*((11-m2)/s2)) / 3
+    c2 = (((4 - m1) / s1) * ((3 - m2) / s2) + ((8 - m1) / s1) * ((7 - m2) / s2) + ((12 - m1) / s1) * (
+        (11 - m2) / s2)) / 3
 
     assert c1 == c2
 
 
-def test_lemma2():
-    """
-    corr(x,y)>=T => dk(X, Y) <= sqrt(2m(1-T))
-    x,y is the original time-series
-    X,Y are the fourier coefficients of the normalized time-series
-    """
-
-
 def test_dataset_normalization(testfiles):
-
     orig = DatasetH5(testfiles["database1.h5"])
     norm = DatasetH5(testfiles["dataset1_normalized.h5"])
 
@@ -70,3 +62,39 @@ def test_dataset_normalization(testfiles):
         t = normalize(ts)
         assert np.array_equal(t, norm[i][:])
 
+
+def test_euclidean_distance_preserved_by_FFT(testfiles):
+    norm = DatasetH5(testfiles["dataset1_normalized.h5"])
+    ts1 = norm[0][:]
+    ts2 = norm[1][:]
+
+    f1 = norm.compute_fourier(0, len(ts1), disable_store=True)
+    f2 = norm.compute_fourier(1, len(ts2), disable_store=True)
+    assert len(ts1) == len(f1)
+    assert np.linalg.norm(ts1 - ts2) == np.linalg.norm(f1 - f2)
+
+
+def test_lemma2(testfiles):
+    """
+    corr(x,y)>=T => dk(X, Y) <= sqrt(2m(1-T))
+    x,y is the original time-series
+    X,Y are the fourier coefficients of the normalized time-series
+    """
+    orig = DatasetH5(testfiles["database1.h5"])
+    norm = DatasetH5(testfiles["dataset1_normalized.h5"])
+
+    T = 0.5
+    k = 5
+    m = len(orig[0])
+    for i in range(len(orig)):
+        for j in range(i + 1, len(orig)):
+            c = corr(orig[i][:], orig[j][:])
+            dxy = sum((norm[i][:] - norm[j][:]) ** 2)
+            cc = 1 - ((1 / (2 * m)) * dxy)
+            assert c - cc < 0.005
+            print(str(c) + "(corr) - " + str(cc) + "(lemma1)", end='\n')
+            if c >= T:
+                fi = norm.compute_fourier(i, k)
+                fj = norm.compute_fourier(j, k)
+                dk = np.linalg.norm(fi - fj)
+                assert dk <= np.sqrt(2 * m * (1 - T))

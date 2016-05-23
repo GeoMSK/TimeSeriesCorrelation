@@ -57,13 +57,17 @@ class DatasetH5:
                 return ts_coeff[0:k]
 
         d = self.f[time_series]
-        fft = np.fft.fft(d)  # TODO: pad with zeros to reach length power of 2, needed ??
+        fft = np.fft.fft(d, n=DatasetH5.__get_next_power_of_2(len(d)))
         if k > len(fft):
             k = len(fft)
         if not disable_store:
             coeff_db.create_dataset(time_series, (len(fft),), data=fft, compression="gzip", compression_opts=9)
             coeff_db.close()
         return fft[0:k]
+
+    @staticmethod
+    def __get_next_power_of_2(x: int) -> int:
+        return 2 ** (x - 1).bit_length()
 
     def close(self):
         """

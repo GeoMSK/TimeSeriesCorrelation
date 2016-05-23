@@ -11,7 +11,7 @@ class PruningMatrix:
         self.h5dataset_name = h5dataset_name
         self.pruning_matrix = None
 
-    def compute_pruning_matrix(self, k: int, T: float) -> np.ndarray:
+    def compute_pruning_matrix(self, k: int, T: float, disable_store=False) -> np.ndarray:
         """
         compute the pruning matrix for the given hdf5 dataset.
         use only k fourier coefficients for every time-series to perform the computation.
