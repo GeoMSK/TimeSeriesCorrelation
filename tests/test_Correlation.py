@@ -1,7 +1,7 @@
 import logging
 import numpy as np
 from Correlation import Correlation
-
+from tests.test_generic import corr, normalize
 __author__ = 'gm'
 
 
@@ -41,11 +41,24 @@ def test_true_correlation(testfiles):
     s1 = np.std(a)
     s2 = np.std(b)
 
-    c.orig_cache[0] = (a - np.mean(a)) / np.std(a)
-    c.orig_cache[1] = (b - np.mean(b)) / np.std(b)
+    c.norm_cache[0] = (a - np.mean(a)) / np.std(a)
+    c.norm_cache[1] = (b - np.mean(b)) / np.std(b)
 
     cor = (((3-m1)/s1)*((1-m2)/s2) + ((4-m1)/s1)*((2-m2)/s2)) / 2
 
     pearson_correlation = c._Correlation__true_correlation(0, 1)
 
     assert pearson_correlation == cor
+
+def test_approx_correlation(testfiles):
+    name = testfiles["dataset1_normalized.h5"]
+
+    c = Correlation(name, name)
+
+    a = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9])
+    b = np.array([2, 3, 4, 5, 6, 7, 8, 9, 10])
+    a_fft = np.fft.fft(normalize(a), norm="ortho")
+    b_fft = np.fft.fft(normalize(b), norm="ortho")
+
+    approx_corr = c._Correlation__aprox_correlation(a_fft, b_fft)
+    assert corr(a, b) - approx_corr < 0.00001

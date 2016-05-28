@@ -122,7 +122,7 @@ class Correlation:
                         self.__load_ts_to_cache(ts_i)
                         for ts_j in possibly_correlated:  # for every ts in current batch that is possibly correlated with the newly cached ts
                             if self.pruning_matrix[ts_i][ts_j] == 1:  # check pruning matrix
-                                self.__correlate(ts_i, ts_j, e)
+                                self.correlation_matrix[ts_i][ts_j] = self.__correlate(ts_i, ts_j, e)
             self.__clear_cache()
         return self.correlation_matrix
 
@@ -134,15 +134,19 @@ class Correlation:
         assert t2 is not None
         k, fft1, fft2 = self.compute_fourrier_coeff_for_ts_pair(t1, t2, e)
         print("found k: %d" % k)
+        return self.__aprox_correlation(fft1, fft2)
+
+    def __aprox_correlation(self, fft1: np.ndarray, fft2: np.ndarray):
+        return 1 - (np.linalg.norm(fft1 - fft2) ** 2) / 2
 
     def __true_correlation(self, t1: int, t2: int):
         """
-        computer the true correlation between two time-series. That is the pearson correlation between them
+        compute the true correlation between two time-series. That is the pearson correlation between them
         """
         assert t1 is not None
         assert t2 is not None
-        ts1 = self.orig_cache[t1]
-        ts2 = self.orig_cache[t2]
+        ts1 = self.norm_cache[t1]
+        ts2 = self.norm_cache[t2]
 
         return np.average(ts1 * ts2)  # ts1 and ts2 should be already normalized
 
