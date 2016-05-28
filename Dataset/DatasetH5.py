@@ -57,7 +57,7 @@ class DatasetH5:
                 return ts_coeff[0:k]
 
         d = self.f[time_series]
-        fft = np.fft.fft(d, n=DatasetH5.__get_next_power_of_2(len(d)))
+        fft = np.fft.fft(d, norm="ortho")
         if k > len(fft):
             k = len(fft)
         if not disable_store:
