@@ -8,6 +8,7 @@ from Dataset.DatasetDatabase import DatasetDatabase
 from Dataset.DatasetDB2HDF5 import DatasetDB2HDF5
 from Dataset.DatasetDatabase import DATE_FORMAT
 from Dataset.DatasetDBNormalizer import DatasetDBNormalizer
+from Correlation import Correlation
 
 __author__ = 'gm'
 
@@ -100,6 +101,20 @@ def main():
     parser_h5norm.add_argument("-c", "--compress", type=int, default=None,
                                help="compress on the fly the HDF5 file, using gzip. Supply a number 1-9. 1 is low"
                                     "compression, 9 is high")
+    parser_corr = subparsers.add_parser('corr',
+                                        help="Find the correlations of time-series in the given dataset")
+    parser_corr.set_defaults(func=corr)
+    parser_corr.add_argument("h5database",
+                             help="the database file. (should contain normalized time-series)")
+    parser_corr.add_argument("--alg", type=int, default=1, choices=[1, 2],
+                             help="the type of algorithm to use")
+    parser_corr.add_argument("-k", type=int, default=5,
+                             help="the number of fourier coefficients to use for the Pruning Matrix")
+    parser_corr.add_argument("-T", type=float, default=0.5,
+                             help="the threshold that determines which time-series pairs are correlated")
+    parser_corr.add_argument("-e", type=float, default=0.04,
+                             help="an upper bound of the approximation error")
+
 
     args = parser.parse_args()
 
@@ -172,6 +187,10 @@ def calc(args):
 def h5norm(args):
     DatasetDBNormalizer.normalize_hdf5(args.h5database, args.h5normalized, args.compress)
 
+
+def corr(args):
+    c = Correlation(args.h5database, args.h5database)
+    corr_matrix = c.find_correlations(args.k, args.T, 20, args.e)
 
 if __name__ == '__main__':
     main()

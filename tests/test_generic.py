@@ -80,8 +80,8 @@ def test_euclidean_distance_preserved_by_FFT(testfiles):
     ts1 = norm[0][:]
     ts2 = norm[1][:]
 
-    f1 = norm.compute_fourier(0, len(ts1), disable_store=True)
-    f2 = norm.compute_fourier(1, len(ts2), disable_store=True)
+    f1 = norm.compute_fourier(0, len(ts1), disable_store=True) * np.sqrt(len(ts1))
+    f2 = norm.compute_fourier(1, len(ts2), disable_store=True) * np.sqrt(len(ts1))
     assert len(ts1) == len(f1)
     assert len(ts2) == len(f2)
     assert np.linalg.norm(ts1 - ts2) - np.linalg.norm(f1 - f2) < 0.1

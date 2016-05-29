@@ -96,8 +96,18 @@ class Correlation:
         """
         logging.info("Begin computation of Pruning Matrix...")
         self.__get_pruning_matrix(k, T, recompute)
+        n = self.pruning_matrix.shape[0]
+        nets = 0
+        pins = 0
+        for i in range(n):
+            for j in range(i + 1, n):
+                if self.pruning_matrix[i][j] == 1:
+                    nets += 1
+                    pins += 2
+        logging.info("cells: %d nets: %d pins: %d" % (n, nets, pins))
         logging.info("Begin computation of Batches...")
         self.__get_batches(B, recompute)
+        logging.info("Batches computation finished. Total batches: %d" % len(self.batches))
         bno = 0
         for b in range(len(self.batches)):
             bno += 1
@@ -133,7 +143,8 @@ class Correlation:
         assert t1 is not None
         assert t2 is not None
         k, fft1, fft2 = self.compute_fourrier_coeff_for_ts_pair(t1, t2, e)
-        print("found k: %d" % k)
+        assert len(fft1) == k
+        assert len(fft2) == k
         return self.__aprox_correlation(fft1, fft2)
 
     def __aprox_correlation(self, fft1: np.ndarray, fft2: np.ndarray):
@@ -179,15 +190,20 @@ class Correlation:
         :rtype: int, np.ndarray, np.ndarray
         """
         k = 0
-        fft1 = self.norm_ds.compute_fourier(ts1, len(self.norm_ds))
-        fft2 = self.norm_ds.compute_fourier(ts2, len(self.norm_ds))
+        m = len(self.norm_ds[0])
+        fft1 = self.norm_ds.compute_fourier(ts1, m)
+        fft2 = self.norm_ds.compute_fourier(ts2, m)
+
+        assert sum(np.abs(fft1) ** 2) - 1 < 0.000001
+        assert sum(np.abs(fft2) ** 2) - 1 < 0.000001
         s1 = 0
         s2 = 0
-        while k < max(len(self.norm_ds[ts1]), len(self.norm_ds[ts1])):
+        while k < m:
             k += 1
-            i = k - 1
-            s1 += 2 * (abs(fft1[i]) ** 2)
-            s2 += 2 * (abs(fft2[i]) ** 2)
-            if min(s1, s2) >= 1 - (e / 2):
+            s1 += np.power(np.abs(fft1[k - 1]), 2)
+            s2 += np.power(np.abs(fft2[k - 1]), 2)
+            # print(fft1_scaled[k-1])
+            # print("k: %d  s1: %.2f  s2: %.2f  %.2f  m: %d" % (k, s1, s2, 1 - (e / 2), m))
+            if min(s1 * 2, s2 * 2) >= 1 - (e / 2):
                 break
         return k, fft1[0:k], fft2[0:k]
