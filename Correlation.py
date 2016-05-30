@@ -148,7 +148,7 @@ class Correlation:
         return self.__aprox_correlation(fft1, fft2)
 
     def __aprox_correlation(self, fft1: np.ndarray, fft2: np.ndarray):
-        return 1 - (np.linalg.norm(fft1 - fft2) ** 2) / 2
+        return 1 - (np.linalg.norm(fft1 - fft2) ** 2)
 
     def __true_correlation(self, t1: int, t2: int):
         """
@@ -190,7 +190,7 @@ class Correlation:
         :rtype: int, np.ndarray, np.ndarray
         """
         k = 0
-        m = len(self.norm_ds[0])
+        m = len(self.norm_ds[ts1])
         fft1 = self.norm_ds.compute_fourier(ts1, m)
         fft2 = self.norm_ds.compute_fourier(ts2, m)
 
@@ -202,8 +202,9 @@ class Correlation:
             k += 1
             s1 += np.power(np.abs(fft1[k - 1]), 2)
             s2 += np.power(np.abs(fft2[k - 1]), 2)
-            # print(fft1_scaled[k-1])
-            # print("k: %d  s1: %.2f  s2: %.2f  %.2f  m: %d" % (k, s1, s2, 1 - (e / 2), m))
+            logging.debug("k: %d  s1: %.6f  s2: %.6f  %.2f  m: %d" % (k, s1, s2, 1 - (e / 2), m))
+            logging.debug("\t%f >= %f" % (min(s1 * 2, s2 * 2), 1 - (e / 2)))
             if min(s1 * 2, s2 * 2) >= 1 - (e / 2):
                 break
+        logging.debug("k: " + str(k))
         return k, fft1[0:k], fft2[0:k]
