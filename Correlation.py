@@ -4,6 +4,7 @@ from Dataset.DatasetH5 import DatasetH5
 from Dataset.DatasetDBNormalizer import DatasetDBNormalizer
 import numpy as np
 import logging
+import time
 
 __author__ = 'gm'
 
@@ -114,18 +115,29 @@ class Correlation:
             logging.info("Begin processing batch %d" % bno)
             batch = self.batches[b]
             self.__load_batch_to_cache(batch)
+            logging.debug("Within batch correlations....")
             # compute correlation of time-series within the batch
+            # avg = 0
             for i in range(len(batch)):
+                logging.debug("Processing ts %d of batch" % i)
+                # t1 = time.time()
                 ts_i = batch[i]
                 for j in range(i + 1, len(batch)):
                     ts_j = batch[j]
                     self.__correlate(ts_i, ts_j, e)
+                # t2 = time.time()
+                # dur = t2 - t1
+                # avg = (i-1)*avg/i + dur/i
 
+
+            logging.debug("Remaining batch correlations...")
             # fetch one by one remaining time-series in other batches and compute correlation with every
             # time-series in the current batch
             for tb in range(b + 1, len(self.batches)):  # for every remaining batch
+                logging.debug("Processing remaining batch %d" % tb)
                 tbatch = self.batches[tb]
                 for i in range(len(tbatch)):  # for every ts in the (remaining) batch loaded
+                    logging.debug("Processing ts %d of remaining batch %d" % (i, tb))
                     ts_i = tbatch[i]
                     possibly_correlated = self.__get_edges(batch, ts_i)
                     if len(possibly_correlated) > 0:
@@ -202,9 +214,10 @@ class Correlation:
             k += 1
             s1 += np.power(np.abs(fft1[k - 1]), 2)
             s2 += np.power(np.abs(fft2[k - 1]), 2)
-            logging.debug("k: %d  s1: %.6f  s2: %.6f  %.2f  m: %d" % (k, s1, s2, 1 - (e / 2), m))
-            logging.debug("\t%f >= %f" % (min(s1 * 2, s2 * 2), 1 - (e / 2)))
+            # logging.debug("k: %d  s1: %.6f  s2: %.6f  %.2f  m: %d" % (k, s1, s2, 1 - (e / 2), m))
+            # logging.debug("\t%f >= %f" % (min(s1 * 2, s2 * 2), 1 - (e / 2)))
             if min(s1 * 2, s2 * 2) >= 1 - (e / 2):
                 break
-        logging.debug("k: " + str(k))
+        assert k <= m/2
+        # logging.debug("k: " + str(k))
         return k, fft1[0:k], fft2[0:k]

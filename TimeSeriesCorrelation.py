@@ -20,7 +20,8 @@ plot_dates = "plot-dates"
 
 def main():
     logging.basicConfig(filename='TimeSeriesCorrelation.log', level=logging.DEBUG, filemode="w",
-                        format="%(asctime)s -- %(message)s", datefmt="%d-%m-%Y %H:%M:%S")
+                        format="%(asctime)s %(levelname)s [%(name)s] %(funcName)s:%(lineno)d -- %(message)s",
+                        datefmt="%d-%m-%Y %H:%M:%S")
 
     parser = argparse.ArgumentParser()
     parser.set_defaults(func=False)
@@ -112,6 +113,8 @@ def main():
                              help="the number of fourier coefficients to use for the Pruning Matrix")
     parser_corr.add_argument("-T", type=float, default=0.5,
                              help="the threshold that determines which time-series pairs are correlated")
+    parser_corr.add_argument("-B", type=int, default=300,
+                             help="the capacity of the cache, that is how many time series can fit to the cache")
     parser_corr.add_argument("-e", type=float, default=0.04,
                              help="an upper bound of the approximation error")
 
@@ -190,7 +193,7 @@ def h5norm(args):
 
 def corr(args):
     c = Correlation(args.h5database, args.h5database)
-    corr_matrix = c.find_correlations(args.k, args.T, 20, args.e)
+    corr_matrix = c.find_correlations(args.k, args.T, args.B, args.e)
 
 if __name__ == '__main__':
     main()

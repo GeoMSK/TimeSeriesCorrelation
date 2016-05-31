@@ -7,30 +7,30 @@ from tests.test_generic import corr, normalize
 
 __author__ = 'gm'
 
-
-def test_Correlation(testfiles):
-   # FIXME: normalization and lemma 3 validity for constant signals
-    logging.basicConfig(level=logging.DEBUG)
-    # name = testfiles["dataset1_normalized.h5"]
-    name = testfiles["h5100_norm"]
-    name2 = testfiles["h5100"]
-
-    orig = DatasetH5(testfiles["h5100"])
-    norm = DatasetH5(testfiles["h5100_norm"])
-
-    print(orig[5][:])
-    for i in range(len(orig)):
-        ts = orig[i][:]
-        t = normalize(ts)
-        assert np.array_equal(t, norm[i][:])
-        fft = np.fft.fft(norm[i])/len(norm[i])
-        print(i)
-        assert abs(sum(np.abs(fft) ** 2) - 1) < 0.00001
-
-    c = Correlation(name, name)
-    correlation_matrix = c.find_correlations(1, 0.7, 20, 0.04)
-
-    assert True
+#
+# def test_Correlation(testfiles):
+#     # FIXME: normalization and lemma 3 validity for constant signals
+#     logging.basicConfig(level=logging.DEBUG)
+#     # name = testfiles["dataset1_normalized.h5"]
+#     name = testfiles["h5100_norm"]
+#     name2 = testfiles["h5100"]
+#
+#     orig = DatasetH5(testfiles["h5100"])
+#     norm = DatasetH5(testfiles["h5100_norm"])
+#
+#     print(orig[5][:])
+#     for i in range(len(orig)):
+#         ts = orig[i][:]
+#         t = normalize(ts)
+#         assert np.array_equal(t, norm[i][:])
+#         fft = np.fft.fft(norm[i])/len(norm[i])
+#         print(i)
+#         assert abs(sum(np.abs(fft) ** 2) - 1) < 0.00001
+#
+#     c = Correlation(name, name)
+#     correlation_matrix = c.find_correlations(1, 0.7, 20, 0.04)
+#
+#     assert True
 
 
 def test_get_edges(testfiles):

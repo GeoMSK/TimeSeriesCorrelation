@@ -1,5 +1,6 @@
 import logging
 import numpy as np
+import time
 from FiducciaMattheyses.FiducciaMattheyses import FiducciaMattheyses
 from Dataset.DatasetH5 import DatasetH5
 from math import ceil
@@ -33,8 +34,6 @@ class Caching:
             for j in range(self.pm.shape[1]):
                 pm_str += "1 " if self.pm[i][j] else "0 "
             pm_str += "\n"
-        logging.debug("Pruning Matrix: \n" + pm_str)
-        logging.debug("Begin computation of batches")
         logging.debug("Initial batch size: %d (all time series)" % len(self.batches[0]))
         unconnected = 0
         for i in range(self.pm.shape[0]):
@@ -63,11 +62,18 @@ class Caching:
         temp_batches = []
         logging.debug("Current batch level: %d" % self.batch_level)
 
+        i = 0
         for batch in self.batches:
+            i += 1
             logging.debug("Batch size before split: %d" % len(batch))
             fm = FiducciaMattheyses()
+            t1 = time.time()
             fm.input_routine(self.pm, batch)
+            t2 = time.time()
             a, b = fm.find_mincut()
+            t3 = time.time()
+            logging.debug("[FM iter:%d cells:%d] input routine: %.3fs  find mincut: %.3fs  total: %.3fs" %
+                          (i, len(batch), t2 - t1, t3 - t2, t3 - t1))
             logging.debug("Batches size after split: %d %d" % (len(a), len(b)))
             self.total_batches += 1
             temp_batches.append(a)
