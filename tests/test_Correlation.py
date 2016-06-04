@@ -1,7 +1,7 @@
 import logging
 import numpy as np
 
-from Correlation import Correlation
+from Correlation1 import Correlation1
 from Dataset.DatasetH5 import DatasetH5
 from tests.test_generic import corr, normalize
 
@@ -35,7 +35,7 @@ __author__ = 'gm'
 
 def test_get_edges(testfiles):
     name = testfiles["h5100"]  # doesn't matter for this test
-    c = Correlation(name, name)
+    c = Correlation1(name, name)
     batch = [0, 1, 2]
     c.pruning_matrix = np.array([[1, 0, 1],
                                  [0, 1, 0],
@@ -49,7 +49,7 @@ def test_get_edges(testfiles):
 
 def test_true_correlation(testfiles):
     name = testfiles["h5100"]  # we just need valid names to instantiate Correlation, the data is not used
-    c = Correlation(name, name)
+    c = Correlation1(name, name)
 
     a = np.array([3, 4])
     b = np.array([1, 2])
@@ -73,7 +73,7 @@ def test_approx_correlation(testfiles):
     name = testfiles["dataset1_normalized.h5"]
     name2 = testfiles["database1.h5"]
 
-    c = Correlation(name, name)
+    c = Correlation1(name, name)
 
     a = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9])
     b = np.array([2, 3, 4, 5, 6, 7, 8, 9, 10])
@@ -103,7 +103,7 @@ def test_approx_correlation_error(testfiles):
     name = testfiles["dataset1_normalized.h5"]
     name2 = testfiles["database1.h5"]
 
-    c = Correlation(name, name)
+    c = Correlation1(name, name)
     orig_ds = DatasetH5(name2)
 
     e = 0.04

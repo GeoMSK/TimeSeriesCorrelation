@@ -74,7 +74,6 @@ class DatasetDBNormalizer:
     def normalize_hdf5(h5db, h5db_normalized, compression_level=None):
         h5 = h5py.File(h5db, mode='r')
         h5_norm = h5py.File(h5db_normalized, mode='w')
-
         for ts in h5:
             ts_norm = DatasetDBNormalizer.normalize_time_series(h5[ts][:])
             if compression_level:

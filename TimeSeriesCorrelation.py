@@ -2,13 +2,17 @@
 import logging
 import argparse
 import datetime as dt
+import pickle
 from Dataset.DatasetPlotter import DatasetPlotter
 from Dataset.DatasetConverter import DatasetConverter
 from Dataset.DatasetDatabase import DatasetDatabase
 from Dataset.DatasetDB2HDF5 import DatasetDB2HDF5
 from Dataset.DatasetDatabase import DATE_FORMAT
 from Dataset.DatasetDBNormalizer import DatasetDBNormalizer
-from Correlation import Correlation
+from PearsonCorrelation import PearsonCorrelation
+from Correlation1 import Correlation1
+from Correlation2 import Correlation2
+
 
 __author__ = 'gm'
 
@@ -107,8 +111,9 @@ def main():
     parser_corr.set_defaults(func=corr)
     parser_corr.add_argument("h5database",
                              help="the database file. (should contain normalized time-series)")
-    parser_corr.add_argument("--alg", type=int, default=1, choices=[1, 2],
-                             help="the type of algorithm to use")
+    parser_corr.add_argument("--alg", type=int, default=0, choices=[0, 1, 2],
+                             help="the type of algorithm to use. 0 for Pearson Correlation, 1 for fourier "
+                                  "approximation and 3 for boolean approximation")
     parser_corr.add_argument("-k", type=int, default=5,
                              help="the number of fourier coefficients to use for the Pruning Matrix")
     parser_corr.add_argument("-T", type=float, default=0.5,
@@ -192,8 +197,21 @@ def h5norm(args):
 
 
 def corr(args):
-    c = Correlation(args.h5database, args.h5database)
-    corr_matrix = c.find_correlations(args.k, args.T, args.B, args.e)
+    if args.alg == 0:
+        c = PearsonCorrelation(args.h5database)
+        corr_matrix = c.find_correlations()
+        with open("pearson_correlation_matrix.pickle", 'wb') as f:
+            pickle.dump(corr_matrix, f)
+    elif args.alg == 1:
+        c = Correlation1(args.h5database, args.h5database)
+        corr_matrix = c.find_correlations(args.k, args.T, args.B, args.e)
+        with open("fourier_approximation_correlation_matrix.pickle", 'wb') as f:
+            pickle.dump(corr_matrix, f)
+    elif args.alg == 2:
+        c = Correlation2(args.h5database)
+        boolean_corr_matrix = c.boolean_approximation(args.T)
+        with open("boolean_correlation_matrix.pickle", 'wb') as f:
+            pickle.dump(boolean_corr_matrix, f)
 
 if __name__ == '__main__':
     main()

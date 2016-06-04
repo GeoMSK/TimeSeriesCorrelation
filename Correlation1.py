@@ -5,11 +5,13 @@ from Dataset.DatasetDBNormalizer import DatasetDBNormalizer
 import numpy as np
 import logging
 import time
+from profilehooks import profile
+import pickle
 
 __author__ = 'gm'
 
 
-class Correlation:
+class Correlation1:
     def __init__(self, normalized_f_dataset_path: str, t_dataset_path: str):
         """
         :param normalized_f_dataset_path: normalized dataset path
@@ -26,6 +28,14 @@ class Correlation:
         self.correlation_matrix = np.zeros(shape=(len(self.norm_ds), len(self.norm_ds)), dtype="float", order="C")
         self.norm_cache = [None] * len(self.norm_ds)
         self.orig_cache = [None] * len(self.norm_ds)
+        self.coeff_cache = [None] * len(self.norm_ds)
+        self.m = len(self.norm_ds[0])
+
+        for i in range(len(self.norm_ds)):
+            self.coeff_cache[i] = self.norm_ds.compute_fourier(i, self.m)
+
+        # with open("pearson_correlation_matrix.pickle", "rb") as f:
+        #     self.pearson = pickle.load(f)
 
     def __load_batch_to_cache(self, batch: list):
         """
@@ -71,12 +81,13 @@ class Correlation:
         If the batches have been computed previously it is returned without recomputation, unless
         recompute is set to True
         """
-        assert self.pruning_matrix is not None
-        if self.batches is not None and recompute is False:
-            return self.batches
-        c = Caching(self.pruning_matrix, self.norm_ds_path, cache_capacity)
-        self.batches = c.calculate_batches()
-        return self.batches
+        self.batches = [[x for x in range(len(self.norm_ds))]]  # bypass batch computation with Fiduccia
+        # assert self.pruning_matrix is not None
+        # if self.batches is not None and recompute is False:
+        #     return self.batches
+        # c = Caching(self.pruning_matrix, self.norm_ds_path, cache_capacity)
+        # self.batches = c.calculate_batches()
+        # return self.batches
 
     def find_correlations(self, k: int, T: float, B: int, e: float, recompute=False):
         """
@@ -124,11 +135,10 @@ class Correlation:
                 ts_i = batch[i]
                 for j in range(i + 1, len(batch)):
                     ts_j = batch[j]
-                    self.__correlate(ts_i, ts_j, e)
-                # t2 = time.time()
-                # dur = t2 - t1
-                # avg = (i-1)*avg/i + dur/i
-
+                    self.correlation_matrix[ts_i][ts_j] = self.__correlate(ts_i, ts_j, e)
+                    # t2 = time.time()
+                    # dur = t2 - t1
+                    # avg = (i-1)*avg/i + dur/i
 
             logging.debug("Remaining batch correlations...")
             # fetch one by one remaining time-series in other batches and compute correlation with every
@@ -148,6 +158,7 @@ class Correlation:
             self.__clear_cache()
         return self.correlation_matrix
 
+    # @profile(filename="profiler.data", immediate="True", stdout=False)
     def __correlate(self, t1: int, t2: int, e: float) -> float:
         """
         compute the correlation between time-series t1 and t2
@@ -157,7 +168,12 @@ class Correlation:
         k, fft1, fft2 = self.compute_fourrier_coeff_for_ts_pair(t1, t2, e)
         assert len(fft1) == k
         assert len(fft2) == k
-        return self.__aprox_correlation(fft1, fft2)
+        approx_corr = self.__aprox_correlation(fft1, fft2)
+
+        # if approx_corr >= 0.7+e and self.pearson[t1][t2] < 0.7 or approx_corr < 0.7-e and self.pearson[t1][t2] >= 0.7:
+        #     raise Exception("[%d,%d]: %f(real) %f(approx) k: %d e:%f" % (t1, t2, self.pearson[t1][t2], approx_corr, k, e))
+
+        return approx_corr
 
     def __aprox_correlation(self, fft1: np.ndarray, fft2: np.ndarray):
         return 1 - (np.linalg.norm(fft1 - fft2) ** 2)
@@ -202,15 +218,16 @@ class Correlation:
         :rtype: int, np.ndarray, np.ndarray
         """
         k = 0
-        m = len(self.norm_ds[ts1])
-        fft1 = self.norm_ds.compute_fourier(ts1, m)
-        fft2 = self.norm_ds.compute_fourier(ts2, m)
+        # fft1 = self.norm_ds.compute_fourier(ts1, self.m)
+        # fft2 = self.norm_ds.compute_fourier(ts2, self.m)
+        fft1 = self.coeff_cache[ts1]
+        fft2 = self.coeff_cache[ts2]
 
         assert sum(np.abs(fft1) ** 2) - 1 < 0.000001
         assert sum(np.abs(fft2) ** 2) - 1 < 0.000001
         s1 = 0
         s2 = 0
-        while k < m:
+        while k < self.m:
             k += 1
             s1 += np.power(np.abs(fft1[k - 1]), 2)
             s2 += np.power(np.abs(fft2[k - 1]), 2)
@@ -218,6 +235,6 @@ class Correlation:
             # logging.debug("\t%f >= %f" % (min(s1 * 2, s2 * 2), 1 - (e / 2)))
             if min(s1 * 2, s2 * 2) >= 1 - (e / 2):
                 break
-        assert k <= m/2
+        assert k <= self.m / 2
         # logging.debug("k: " + str(k))
         return k, fft1[0:k], fft2[0:k]
