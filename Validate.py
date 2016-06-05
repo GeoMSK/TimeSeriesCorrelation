@@ -8,7 +8,7 @@ fourier_approximation_file = "fourier_approximation_correlation_matrix.pickle"
 boolean_approximation_file = "boolean_correlation_matrix.pickle"
 pearson_correlation_file = "pearson_correlation_matrix.pickle"
 
-h5_database_file = "./test_resources/database1.h5"
+h5_database_file = "./test_resources/database1.h5"  # original h5 database
 
 with open(fourier_approximation_file, "rb") as f:
     fourier_approximation = pickle.load(f)
@@ -103,7 +103,7 @@ def assertFourier(T, e, v=False):
                     print("[%d,%d]: %f(real) %f(approx)" % (i, j, pear[i][j], fourier[i][j]))
             if fourier[i][j] >= T and pear[i][j] < T:
                 f_false_positives += 1
-            if fourier[i][j] < T and pear[i][j] >= T:
+            elif fourier[i][j] < T and pear[i][j] >= T:
                 f_false_negatives += 1
 
 
@@ -122,11 +122,11 @@ def assertBoolean(T, v=False):
             if bool[i][j] == 1 and pear[i][j] < T:
                 b_erroneous_positives += 1
                 if v:
-                    print("[%d,%d]: %f" % (i, j, pear[i][j]))
+                    print("[%d,%d]: %f  bool: %d" % (i, j, pear[i][j], bool[i][j]))
             if bool[i][j] == 0 and pear[i][j] >= T:
                 b_erroneous_negatives += 1
                 if v:
-                    print("[%d,%d]: %f" % (i, j, pear[i][j]))
+                    print("[%d,%d]: %f  bool: %d" % (i, j, pear[i][j], bool[i][j]))
 
 
 #
@@ -156,11 +156,12 @@ num_pearson = num_corr(pearson_correlation, T)
 print("assertFourier...")
 assertFourier(T, e)
 print("assertBoolean...")
-assertBoolean(T)
+assertBoolean(T, True)
 # print("assertPearson...")
 # assert_pearson()  # takes too long
 
 print("")
+print("Threshold T: %.4f  error e: %.4f" % (T, e))
 print("Correlated pairs based on \033[1mfourier approximation\033[0m: %d\n"
       "                                false positives: %d\n"
       "                                false negatives: %d\n"

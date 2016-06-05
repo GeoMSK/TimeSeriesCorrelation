@@ -32,7 +32,7 @@ class Correlation1:
         self.m = len(self.norm_ds[0])
 
         for i in range(len(self.norm_ds)):
-            self.coeff_cache[i] = self.norm_ds.compute_fourier(i, self.m)
+            self.coeff_cache[i] = self.norm_ds.compute_fourier(i, 10000)
 
         # with open("pearson_correlation_matrix.pickle", "rb") as f:
         #     self.pearson = pickle.load(f)
@@ -135,7 +135,7 @@ class Correlation1:
                 ts_i = batch[i]
                 for j in range(i + 1, len(batch)):
                     ts_j = batch[j]
-                    self.correlation_matrix[ts_i][ts_j] = self.__correlate(ts_i, ts_j, e)
+                    self.correlation_matrix[ts_i][ts_j] = self.__correlate(ts_i, ts_j, e, T)
                     # t2 = time.time()
                     # dur = t2 - t1
                     # avg = (i-1)*avg/i + dur/i
@@ -154,18 +154,20 @@ class Correlation1:
                         self.__load_ts_to_cache(ts_i)
                         for ts_j in possibly_correlated:  # for every ts in current batch that is possibly correlated with the newly cached ts
                             if self.pruning_matrix[ts_i][ts_j] == 1:  # check pruning matrix
-                                self.correlation_matrix[ts_i][ts_j] = self.__correlate(ts_i, ts_j, e)
+                                self.correlation_matrix[ts_i][ts_j] = self.__correlate(ts_i, ts_j, e, T)
             self.__clear_cache()
         return self.correlation_matrix
 
     # @profile(filename="profiler.data", immediate="True", stdout=False)
-    def __correlate(self, t1: int, t2: int, e: float) -> float:
+    def __correlate(self, t1: int, t2: int, e: float, T: float) -> float:
         """
         compute the correlation between time-series t1 and t2
         """
         assert t1 is not None
         assert t2 is not None
-        k, fft1, fft2 = self.compute_fourrier_coeff_for_ts_pair(t1, t2, e)
+        k, fft1, fft2 = self.compute_fourrier_coeff_for_ts_pair(t1, t2, e, T)
+        if k is None:
+            return 0
         assert len(fft1) == k
         assert len(fft2) == k
         approx_corr = self.__aprox_correlation(fft1, fft2)
@@ -206,9 +208,11 @@ class Correlation1:
                 edges.append(current_batch[i])
         return edges
 
-    def compute_fourrier_coeff_for_ts_pair(self, ts1: int, ts2: int, e: float):
+    def compute_fourrier_coeff_for_ts_pair(self, ts1: int, ts2: int, e: float, T=None):
         """
-        Compute that many fourier coefficients for time-series ts1 and ts2, so that the approximation error is <= e
+        Compute that many fourier coefficients for time-series ts1 and ts2, so that the approximation error is <= e.
+        If threshold T is given then at every iteration it is checked whether the euclidean distance d^2(X,Y) exceeds
+        sqrt(2m(1-T)) implying that corr(x,y) < T, if this happens then computation stops and None is returned
 
         :param ts1: the time series to compute the fourier coefficients for
         :type ts1: int
@@ -227,8 +231,13 @@ class Correlation1:
         assert sum(np.abs(fft2) ** 2) - 1 < 0.000001
         s1 = 0
         s2 = 0
+        if T:
+            theta = np.sqrt(2*(1-T))
         while k < self.m:
             k += 1
+            if T and np.linalg.norm(fft1[0:k]-fft2[0:k]) > theta:
+                return None, None, None
+
             s1 += np.power(np.abs(fft1[k - 1]), 2)
             s2 += np.power(np.abs(fft2[k - 1]), 2)
             # logging.debug("k: %d  s1: %.6f  s2: %.6f  %.2f  m: %d" % (k, s1, s2, 1 - (e / 2), m))
