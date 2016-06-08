@@ -128,7 +128,6 @@ class Correlation1:
             self.__load_batch_to_cache(batch)
             logging.debug("Within batch correlations....")
             # compute correlation of time-series within the batch
-            # avg = 0
             for i in range(len(batch)):
                 logging.debug("Processing ts %d of batch" % i)
                 # t1 = time.time()
@@ -136,9 +135,6 @@ class Correlation1:
                 for j in range(i + 1, len(batch)):
                     ts_j = batch[j]
                     self.correlation_matrix[ts_i][ts_j] = self.__correlate(ts_i, ts_j, e, T)
-                    # t2 = time.time()
-                    # dur = t2 - t1
-                    # avg = (i-1)*avg/i + dur/i
 
             logging.debug("Remaining batch correlations...")
             # fetch one by one remaining time-series in other batches and compute correlation with every

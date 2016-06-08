@@ -9,7 +9,7 @@ __author__ = 'gm'
 
 
 class Correlation2:
-    def __init__(self, t_dataset_path: str):
+    def __init__(self, t_dataset_path: str, validation=False):
         """
         :param t_dataset_path: original dataset path
         """
@@ -21,7 +21,9 @@ class Correlation2:
         self.CB = np.zeros(shape=(len(self.orig_ds), len(self.orig_ds)), dtype="b1", order="C")
         self.cache = [None] * len(self.orig_ds)
         self.logger = logging.getLogger("Correlation2")
-        self.c = PearsonCorrelation("test_resources/dataset1_normalized.h5")
+        if validation:
+            self.c = PearsonCorrelation("test_resources/dataset1_normalized.h5")
+        self.validation = validation
 
     def get_ts(self, i):
         if self.cache[i] is None:
@@ -50,11 +52,11 @@ class Correlation2:
             # self.logger.debug("%f <= %f" % (ed, theta))
             if ed <= theta:
                 CB[i, i + 1] = 1
-                if self.c.corr(i, i + 1) < T:
+                if self.validation and self.c.corr(i, i + 1) < T:
                     print("[%d,%d]:%f bool:%d  (ed)%f <= %f(theta)" %
                           (i, i + 1, self.c.corr(i, i + 1), CB[i, i + 1], ed, theta))
             else:
-                if self.c.corr(i, i + 1) >= T:
+                if self.validation and self.c.corr(i, i + 1) >= T:
                     print("[%d,%d]:%f bool:%d  (ed)%f <= %f(theta)" %
                           (i, i + 1, self.c.corr(i, i + 1), CB[i, i + 1], ed, theta))
         self.logger.debug("Initial Processing of diagonal finished")
@@ -69,12 +71,12 @@ class Correlation2:
                 LB[i, j] = max([max(LB[i, u] - UB[u, j], LB[u, j] - UB[i, u]) for u in range(i + 1, j)])
                 if UB[i, j] <= theta:
                     CB[i, j] = 1
-                    if self.c.corr(i, j) < T:
+                    if self.validation and self.c.corr(i, j) < T:
                         print("[%d,%d]:%f bool:%d  (UB)%f <= %f(theta)" %
                               (i, j, self.c.corr(i, j), CB[i, j], UB[i, j], theta))
                 elif LB[i, j] > theta:
                     CB[i, j] = 0
-                    if self.c.corr(i, j) >= T:
+                    if self.validation and self.c.corr(i, j) >= T:
                         print("[%d,%d]:%f bool:%d  (LB)%f > %f(theta)" %
                               (i, j, self.c.corr(i, j), CB[i, j], LB[i, j], theta))
                 else:
@@ -83,11 +85,11 @@ class Correlation2:
                     UB[i, j] = LB[i, j] = ed
                     if ed <= theta:
                         CB[i, j] = 1
-                        if self.c.corr(i, j) < T:
+                        if self.validation and self.c.corr(i, j) < T:
                             print("[%d,%d]:%f bool:%d  (ed)%f <= %f(theta)" %
                                   (i, j, self.c.corr(i, j), CB[i, j], ed, theta))
                     else:
-                        if self.c.corr(i, j) >= T:
+                        if self.validation and self.c.corr(i, j) >= T:
                             print("[%d,%d]:%f bool:%d  (ed)%f <= %f(theta)" %
                                   (i, j, self.c.corr(i, j), CB[i, j], ed, theta))
         self.logger.debug("Exact distance computations: %d/%d" % (s, total))

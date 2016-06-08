@@ -122,6 +122,8 @@ def main():
                              help="the capacity of the cache, that is how many time series can fit to the cache")
     parser_corr.add_argument("-e", type=float, default=0.04,
                              help="an upper bound of the approximation error")
+    parser_corr.add_argument("--validate", action="store_true", default=False,
+                             help="activate functions that validate results as the algorithm executes")
 
 
     args = parser.parse_args()
@@ -208,7 +210,7 @@ def corr(args):
         with open("fourier_approximation_correlation_matrix.pickle", 'wb') as f:
             pickle.dump(corr_matrix, f)
     elif args.alg == 2:
-        c = Correlation2(args.h5database)
+        c = Correlation2(args.h5database, args.validate)
         boolean_corr_matrix = c.boolean_approximation(args.T)
         with open("boolean_correlation_matrix.pickle", 'wb') as f:
             pickle.dump(boolean_corr_matrix, f)
