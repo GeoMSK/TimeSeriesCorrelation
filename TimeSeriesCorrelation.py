@@ -13,7 +13,6 @@ from PearsonCorrelation import PearsonCorrelation
 from Correlation1 import Correlation1
 from Correlation2 import Correlation2
 
-
 __author__ = 'gm'
 
 print_max_datetimes = "print-max-datetimes"
@@ -29,6 +28,8 @@ def main():
 
     parser = argparse.ArgumentParser()
     parser.set_defaults(func=False)
+    parser.add_argument("--logger-off", action="store_true", default=False,
+                        help="turn off all logging")
 
     subparsers = parser.add_subparsers(title="subcommands", help="")
     parser_dataset2db = subparsers.add_parser('dataset2db',
@@ -125,10 +126,11 @@ def main():
     parser_corr.add_argument("--validate", action="store_true", default=False,
                              help="activate functions that validate results as the algorithm executes")
 
-
     args = parser.parse_args()
 
     if args.func:
+        if args.logger_off:
+            logging.getLogger().setLevel(100)
         args.func(args)
     else:
         parser.print_help()
@@ -205,7 +207,7 @@ def corr(args):
         with open("pearson_correlation_matrix.pickle", 'wb') as f:
             pickle.dump(corr_matrix, f)
     elif args.alg == 1:
-        c = Correlation1(args.h5database, args.h5database)
+        c = Correlation1(args.h5database)
         corr_matrix = c.find_correlations(args.k, args.T, args.B, args.e)
         with open("fourier_approximation_correlation_matrix.pickle", 'wb') as f:
             pickle.dump(corr_matrix, f)
@@ -214,6 +216,7 @@ def corr(args):
         boolean_corr_matrix = c.boolean_approximation(args.T)
         with open("boolean_correlation_matrix.pickle", 'wb') as f:
             pickle.dump(boolean_corr_matrix, f)
+
 
 if __name__ == '__main__':
     main()

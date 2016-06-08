@@ -12,22 +12,18 @@ __author__ = 'gm'
 
 
 class Correlation1:
-    def __init__(self, normalized_f_dataset_path: str, t_dataset_path: str):
+    def __init__(self, normalized_f_dataset_path: str):
         """
         :param normalized_f_dataset_path: normalized dataset path
-        :param t_dataset_path: original dataste path
         """
         self.norm_ds_path = normalized_f_dataset_path
-        self.orig_ds_path = t_dataset_path
         self.norm_ds = DatasetH5(normalized_f_dataset_path)
-        self.orig_ds = DatasetH5(t_dataset_path)
         self.pruning_matrix = None
         """:type pruning_matrix: np.ndarray """
         self.batches = None
         """:type batches: list"""
         self.correlation_matrix = np.zeros(shape=(len(self.norm_ds), len(self.norm_ds)), dtype="float", order="C")
         self.norm_cache = [None] * len(self.norm_ds)
-        self.orig_cache = [None] * len(self.norm_ds)
         self.coeff_cache = [None] * len(self.norm_ds)
         self.m = len(self.norm_ds[0])
 
@@ -52,15 +48,12 @@ class Correlation1:
         assert isinstance(ts, int)
         if self.norm_cache[ts] is None:
             self.norm_cache[ts] = self.norm_ds[ts].value
-        if self.orig_cache[ts] is None:
-            self.orig_cache[ts] = self.orig_ds[ts].value
 
     def __clear_cache(self):
         """
         clears the cache
         """
         self.norm_cache = [None] * len(self.norm_ds)
-        self.orig_cache = [None] * len(self.norm_ds)
 
     def __get_pruning_matrix(self, k: int, T: float, recompute=False) -> np.ndarray:
         """
