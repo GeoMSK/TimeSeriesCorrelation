@@ -1,1 +1,0 @@
-place the dataset in this folder, named data.txt
