@@ -1,0 +1,41 @@
+#
+# all commands to create the 2 datasets:
+#
+
+# note that these 2 datasets contain timeseries with non overlapping time ranges from the original dataset
+
+# 1st dataset range: '07/08/2015-08:57:00--07/08/2015-18:05:00'
+# 2nd dataset range: '07/08/2015-15:25:00--07/08/2015-22:16:00'
+
+# create sqlite with original dataset
+./TimeSeriesCorrelation.py dataset2db resources/data.txt database.sqlite
+
+#
+# to check a specific threshold before applying it
+#
+
+# for 1st dataset
+./TimeSeriesCorrelation.py dates database.sqlite plot-dates --threshold %10 --all --range '07/08/2015-08:57:00--07/08/2015-18:05:00'
+
+# for 2nd dataset
+./TimeSeriesCorrelation.py dates database.sqlite plot-dates --threshold %10 --all --range '07/08/2015-15:25:00--07/08/2015-22:16:00'
+
+#
+# create datasets in hdf5 format
+#
+
+# create 1st dataset in hdf5 format
+./TimeSeriesCorrelation.py db2h5 database.sqlite database1.h5 --threshold %10 --range '07/08/2015-08:57:00--07/08/2015-18:05:00' -c 9
+
+# create 2nd dataset in hdf5 format
+./TimeSeriesCorrelation.py db2h5 database.sqlite database2.h5 --threshold %10 --range '07/08/2015-15:25:00--07/08/2015-22:16:00' -c 9
+
+#
+# normalize hdf5 databases, we call these datasets since we will be working with these files
+#
+
+# create 1st normalized dataset
+./TimeSeriesCorrelation.py h5norm database1.h5 dataset1_normalized.h5 -c 9
+
+# create 2nd normalized dataset
+./TimeSeriesCorrelation.py h5norm database2.h5 dataset2_normalized.h5 -c 9
