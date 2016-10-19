@@ -1,7 +1,7 @@
 import logging
 import numpy as np
 
-from Correlation1 import Correlation1
+from FourierApproximation import FourierApproximation
 from Dataset.DatasetH5 import DatasetH5
 from tests.test_generic import corr, normalize
 
@@ -35,21 +35,21 @@ __author__ = 'gm'
 
 def test_get_edges(testfiles):
     name = testfiles["h5100"]  # doesn't matter for this test
-    c = Correlation1(name, name)
+    c = FourierApproximation(name)
     batch = [0, 1, 2]
     c.pruning_matrix = np.array([[1, 0, 1],
                                  [0, 1, 0],
                                  [1, 0, 1]
                                  ])
 
-    assert c._Correlation__get_edges(batch, 0) == [0, 2]
-    assert c._Correlation__get_edges(batch, 1) == [1]
-    assert c._Correlation__get_edges(batch, 2) == [0, 2]
+    assert c._FourierApproximation__get_edges(batch, 0) == [0, 2]
+    assert c._FourierApproximation__get_edges(batch, 1) == [1]
+    assert c._FourierApproximation__get_edges(batch, 2) == [0, 2]
 
 
 def test_true_correlation(testfiles):
     name = testfiles["h5100"]  # we just need valid names to instantiate Correlation, the data is not used
-    c = Correlation1(name, name)
+    c = FourierApproximation(name)
 
     a = np.array([3, 4])
     b = np.array([1, 2])
@@ -64,7 +64,7 @@ def test_true_correlation(testfiles):
 
     cor = (((3 - m1) / s1) * ((1 - m2) / s2) + ((4 - m1) / s1) * ((2 - m2) / s2)) / 2
 
-    pearson_correlation = c._Correlation__true_correlation(0, 1)
+    pearson_correlation = c._FourierApproximation__true_correlation(0, 1)
 
     assert pearson_correlation == cor
 
@@ -73,7 +73,7 @@ def test_approx_correlation(testfiles):
     name = testfiles["dataset1_normalized.h5"]
     name2 = testfiles["database1.h5"]
 
-    c = Correlation1(name, name)
+    c = FourierApproximation(name)
 
     a = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9])
     b = np.array([2, 3, 4, 5, 6, 7, 8, 9, 10])
@@ -103,7 +103,7 @@ def test_approx_correlation_error(testfiles):
     name = testfiles["dataset1_normalized.h5"]
     name2 = testfiles["database1.h5"]
 
-    c = Correlation1(name, name)
+    c = FourierApproximation(name)
     orig_ds = DatasetH5(name2)
 
     e = 0.04
@@ -128,7 +128,7 @@ def test_approx_correlation_error(testfiles):
 
             approx_corr_all_coeff = 1 - (np.linalg.norm(t1_fft - t2_fft) ** 2)/2
 
-            approx_corr = c._Correlation__correlate(t1, t2, e)
+            approx_corr = c._FourierApproximation__correlate(t1, t2, e, None)
 
             print("Real correlation:   " + str(real_corr))
             print("Approx correlation: " + str(approx_corr_all_coeff) + " (all coefficients)")

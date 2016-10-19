@@ -8,7 +8,7 @@ from PearsonCorrelation import PearsonCorrelation
 __author__ = 'gm'
 
 
-class Correlation2:
+class BooleanCorrelation:
     def __init__(self, t_dataset_path: str, validation=False):
         """
         :param t_dataset_path: original dataset path
@@ -31,7 +31,7 @@ class Correlation2:
 
         return self.cache[i]
 
-    def boolean_approximation(self, T: int):
+    def boolean_approximation(self, T: float):
         m = len(self.orig_ds[0])
         n = len(self.orig_ds)
         theta = np.sqrt(2 * m * (1 - T))
@@ -93,20 +93,20 @@ class Correlation2:
                             print("[%d,%d]:%f bool:%d  (ed)%f <= %f(theta)" %
                                   (i, j, self.c.corr(i, j), CB[i, j], ed, theta))
         self.logger.debug("Exact distance computations: %d/%d" % (s, total))
-        self.logger.debug("Avg Euclidean distance computation time: %.3f ms" % (Correlation2.avg * 1000))
+        self.logger.debug("Avg Euclidean distance computation time: %.3f ms" % (BooleanCorrelation.avg * 1000))
         return CB
 
     avg = 0
     n = 0
 
     def d(self, t1: int, t2: int):
-        Correlation2.n += 1
+        BooleanCorrelation.n += 1
         ts1 = self.get_ts(t1)
         ts2 = self.get_ts(t2)
         begin = time.time()
         euclidean_distance = np.linalg.norm(ts1 - ts2)
         end = time.time()
         dur = end - begin
-        Correlation2.avg = (Correlation2.n - 1) * Correlation2.avg / Correlation2.n + dur / Correlation2.n
+        BooleanCorrelation.avg = (BooleanCorrelation.n - 1) * BooleanCorrelation.avg / BooleanCorrelation.n + dur / BooleanCorrelation.n
 
         return euclidean_distance

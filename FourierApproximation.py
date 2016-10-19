@@ -11,7 +11,7 @@ import pickle
 __author__ = 'gm'
 
 
-class Correlation1:
+class FourierApproximation:
     def __init__(self, normalized_f_dataset_path: str):
         """
         :param normalized_f_dataset_path: normalized dataset path
@@ -27,6 +27,7 @@ class Correlation1:
         self.coeff_cache = [None] * len(self.norm_ds)
         self.m = len(self.norm_ds[0])
 
+        logging.debug("Begin computation of fourier coefficients...")
         for i in range(len(self.norm_ds)):
             self.coeff_cache[i] = self.norm_ds.compute_fourier(i, 10000)
 
@@ -122,7 +123,7 @@ class Correlation1:
             logging.debug("Within batch correlations....")
             # compute correlation of time-series within the batch
             for i in range(len(batch)):
-                logging.debug("Processing ts %d of batch" % i)
+                logging.debug("Processing ts %d of batch %d" % (i, bno))
                 # t1 = time.time()
                 ts_i = batch[i]
                 for j in range(i + 1, len(batch)):
@@ -221,10 +222,10 @@ class Correlation1:
         s1 = 0
         s2 = 0
         if T:
-            theta = np.sqrt(2*(1-T))
+            theta = np.sqrt(2 * (1 - T))
         while k < self.m:
             k += 1
-            if T and np.linalg.norm(fft1[0:k]-fft2[0:k]) > theta:
+            if T and np.linalg.norm(fft1[0:k] - fft2[0:k]) > theta:
                 return None, None, None
 
             s1 += np.power(np.abs(fft1[k - 1]), 2)
