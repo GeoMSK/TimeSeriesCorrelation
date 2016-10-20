@@ -13,27 +13,27 @@ class BooleanCorrelation:
         """
         :param t_dataset_path: original dataset path
         """
-        self.orig_ds_path = t_dataset_path
-        self.orig_ds = DatasetH5(t_dataset_path)
-        self.UB = np.full(shape=(len(self.orig_ds), len(self.orig_ds)), fill_value=sys.maxsize, dtype="float32",
+        self.norm_ds_path = t_dataset_path
+        self.norm_ds = DatasetH5(t_dataset_path)
+        self.UB = np.full(shape=(len(self.norm_ds), len(self.norm_ds)), fill_value=sys.maxsize, dtype="float32",
                           order="C")
-        self.LB = np.zeros(shape=(len(self.orig_ds), len(self.orig_ds)), dtype="float32", order="C")
-        self.CB = np.zeros(shape=(len(self.orig_ds), len(self.orig_ds)), dtype="b1", order="C")
-        self.cache = [None] * len(self.orig_ds)
+        self.LB = np.zeros(shape=(len(self.norm_ds), len(self.norm_ds)), dtype="float32", order="C")
+        self.CB = np.zeros(shape=(len(self.norm_ds), len(self.norm_ds)), dtype="b1", order="C")
+        self.cache = [None] * len(self.norm_ds)
         self.logger = logging.getLogger("Correlation2")
         if validation:
-            self.c = PearsonCorrelation("test_resources/dataset1_normalized.h5")
+            self.c = PearsonCorrelation(self.norm_ds_path)
         self.validation = validation
 
     def get_ts(self, i):
         if self.cache[i] is None:
-            self.cache[i] = self.orig_ds[i].value
+            self.cache[i] = self.norm_ds[i].value
 
         return self.cache[i]
 
     def boolean_approximation(self, T: float):
-        m = len(self.orig_ds[0])
-        n = len(self.orig_ds)
+        m = len(self.norm_ds[0])
+        n = len(self.norm_ds)
         theta = np.sqrt(2 * m * (1 - T))
 
         self.logger.debug("m: %d  n: %d  theta:%f" % (m, n, theta))

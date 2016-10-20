@@ -1,6 +1,7 @@
 import numpy as np
 import pickle
 import argparse
+import os
 from Dataset.DatasetH5 import DatasetH5
 
 __author__ = 'gm'
@@ -12,19 +13,59 @@ parser.add_argument("-b", "--boolean-correlation-file", default="boolean_correla
                     help="the path to the boolean correlation pickle file")
 parser.add_argument("-p", "--pearson-correlation-file", default="pearson_correlation_matrix.pickle",
                     help="the path to the pearson correlation pickle file")
+parser.add_argument("-k", type=int, default=5,
+                    help="The fourier coefficients to be used for the pruning matrix")
 parser.add_argument("-T", type=float, default=0.7,
                     help="The threshold")
 parser.add_argument("-e", type=float, default=0.04,
                     help="The approximation error")
+parser.add_argument("--original-dataset", default="./test_resources/database1.h5",
+                    help="The original h5 dataset file (non normalized)")
+parser.add_argument("--normalized-dataset", default="./test_resources/dataset1_normalized.h5",
+                    help="The normalized h5 dataset file")
+parser.add_argument("--results-folder", default="results",
+                    help="the folder where the results will be stored")
+parser.add_argument("--skip-processing", action="store_true", default=False,
+                    help="If this is set the TimeSeries Correlation does not perform any processing and "
+                         "the validation will occur in existing files")
+parser.add_argument("-df", action="store_true",
+                    help="Disable fourier approximation correlation matrix validation")
+parser.add_argument("-db", action="store_true",
+                    help="Disable boolean correlation matrix validation")
+parser.add_argument("-dp", action="store_true",
+                    help="Disable pearson correlation matrix validation")
+parser.add_argument("-v", action="store_true",
+                    help="Produce more output")
 
 args = parser.parse_args()
+results_folder = args.results_folder
+if not os.path.exists(results_folder):
+    os.mkdir(results_folder)
 
-fourier_approximation_file = args.fourier_approximation_file
-boolean_approximation_file = args.boolean_correlation_file
-pearson_correlation_file = args.pearson_correlation_file
+fourier_approximation_file = results_folder + "/" + args.fourier_approximation_file
+boolean_approximation_file = results_folder + "/" + args.boolean_correlation_file
+pearson_correlation_file = results_folder + "/" + args.pearson_correlation_file
+
+h5_dataset_orig = args.original_dataset
+h5_dataset_norm = args.normalized_dataset
+
+k = args.k
+T = args.T
+e = args.e
+
+if not args.skip_processing:
+    print("Executing Pearson...")
+    os.system("python3 TimeSeriesCorrelation.py corr --alg 0 -k %d -T %f -e %f --out %s %s" % (
+        k, T, e, pearson_correlation_file, h5_dataset_norm))
+    print("Executing Fourier...")
+    os.system("python3 TimeSeriesCorrelation.py corr --alg 1 -k %d -T %f -e %f --out %s %s" % (
+        k, T, e, fourier_approximation_file, h5_dataset_norm))
+    print("Executing Boolean...")
+    os.system("python3 TimeSeriesCorrelation.py corr --alg 2 -k %d -T %f -e %f --out %s %s" % (
+        k, T, e, boolean_approximation_file, h5_dataset_norm))
 
 # h5_database_file = "./test_resources/database1.h5"  # original h5 database
-h5_database_file = "./database2.h5"  # original h5 database
+# h5_database_file = "./database2.h5"  # original h5 database
 
 with open(fourier_approximation_file, "rb") as f:
     fourier_approximation = pickle.load(f)
@@ -35,7 +76,7 @@ with open(boolean_approximation_file, "rb") as f:
 with open(pearson_correlation_file, "rb") as f:
     pearson_correlation = pickle.load(f)
 
-orig_db = DatasetH5(h5_database_file)
+orig_db = DatasetH5(h5_dataset_orig)
 
 
 def normalize(ts):
@@ -77,7 +118,7 @@ def num_corr(table, T=None):
         for j in range(i + 1, n):
             # assert -1 <= table[i][j] <= 1
             if not (-1 <= table[i][j] <= 1):
-                print("pearson[%d][%d]: %f" % (i,j, table[i][j]))
+                print("pearson[%d][%d]: %f" % (i, j, table[i][j]))
             if T:
                 if table[i][j] >= T:
                     s += 1
@@ -140,11 +181,11 @@ def assertBoolean(T, v=False):
             if bool[i][j] == 1 and pear[i][j] < T:
                 b_erroneous_positives += 1
                 if v:
-                    print("[%d,%d]: %f  bool: %d" % (i, j, pear[i][j], bool[i][j]))
+                    print("[%d,%d]: %.8f  bool: %d" % (i, j, pear[i][j], bool[i][j]))
             if bool[i][j] == 0 and pear[i][j] >= T:
                 b_erroneous_negatives += 1
                 if v:
-                    print("[%d,%d]: %f  bool: %d" % (i, j, pear[i][j], bool[i][j]))
+                    print("[%d,%d]: %.8f  bool: %d" % (i, j, pear[i][j], bool[i][j]))
 
 
 #
@@ -161,9 +202,6 @@ print("diagonal check pearson...", end="")
 assert_diagonal(pearson_correlation)
 print(" ok")
 
-T = args.T
-e = args.e
-
 print("Computing num_fourier...", end="")
 num_fourier = num_corr(fourier_approximation, T)
 print(" done")
@@ -174,12 +212,15 @@ print("Computing num_pearson...", end="")
 num_pearson = num_corr(pearson_correlation, T)
 print(" done")
 
-print("assertFourier...")
-assertFourier(T, e)
-print("assertBoolean...")
-assertBoolean(T)
-print("assertPearson...")
-assert_pearson()  # takes too long
+if not args.df:
+    print("assertFourier...")
+    assertFourier(T, e, args.v)
+if not args.db:
+    print("assertBoolean...")
+    assertBoolean(T, args.v)
+if not args.dp:
+    print("assertPearson...")
+    assert_pearson()  # takes too long
 
 print("")
 print("Threshold T: %.4f  error e: %.4f" % (T, e))

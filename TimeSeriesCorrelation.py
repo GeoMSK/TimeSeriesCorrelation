@@ -206,21 +206,21 @@ def corr(args):
     if args.alg == 0:
         c = PearsonCorrelation(args.h5database)
         corr_matrix = c.find_correlations()
-        filename = "pearson_correlation_matrix.pickle" if args.out is None else args.out
-        with open(filename, 'wb') as f:
-            pickle.dump(corr_matrix, f)
+        if args.out is not None:
+            with open(args.out, 'wb') as f:
+                pickle.dump(corr_matrix, f)
     elif args.alg == 1:
         c = FourierApproximation(args.h5database)
         corr_matrix = c.find_correlations(args.k, args.T, args.B, args.e)
-        filename = "fourier_approximation_correlation_matrix.pickle" if args.out is None else args.out
-        with open(filename, 'wb') as f:
-            pickle.dump(corr_matrix, f)
+        if args.out is not None:
+            with open(args.out, 'wb') as f:
+                pickle.dump(corr_matrix, f)
     elif args.alg == 2:
         c = BooleanCorrelation(args.h5database, args.validate)
         boolean_corr_matrix = c.boolean_approximation(args.T)
-        filename = "boolean_correlation_matrix.pickle" if args.out is None else args.out
-        with open(filename, 'wb') as f:
-            pickle.dump(boolean_corr_matrix, f)
+        if args.out is not None:
+            with open(args.out, 'wb') as f:
+                pickle.dump(boolean_corr_matrix, f)
 
 
 if __name__ == '__main__':
