@@ -36,7 +36,7 @@ class DatasetH5:
     def __iter__(self):
         return self.f.__iter__()
 
-    def compute_fourier(self, time_series, k: int, disable_store=False):
+    def compute_fourier(self, time_series, k=-1, disable_store=False):
         """
         compute the fourier transform of the given time-series, return only the k coefficients in a list.
         time-series may either be the name of the time series or the index of self.ts_names
@@ -58,7 +58,7 @@ class DatasetH5:
 
         d = self.f[time_series]
         fft = np.fft.fft(d)/len(d)
-        if k > len(fft):
+        if k > len(fft) or k == -1:
             k = len(fft)
         if not disable_store:
             coeff_db.create_dataset(time_series, (len(fft),), data=fft, compression="gzip", compression_opts=9)

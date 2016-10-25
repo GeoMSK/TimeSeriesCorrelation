@@ -2,6 +2,7 @@ from PruningMatrix import PruningMatrix
 from Caching import Caching
 from Dataset.DatasetH5 import DatasetH5
 from Dataset.DatasetDBNormalizer import DatasetDBNormalizer
+from Util import calc_limit
 import numpy as np
 import logging
 import time
@@ -12,9 +13,12 @@ __author__ = 'gm'
 
 
 class FourierApproximation:
-    def __init__(self, normalized_f_dataset_path: str):
+    def __init__(self, normalized_f_dataset_path: str, limit_ts_num=None, limit_ts_len=None):
         """
         :param normalized_f_dataset_path: normalized dataset path
+        :param limit_ts_num: limit the number of time series to be processed. May be an integer (eg 1000) or a string (eg %70)
+        in case it is a string it represents a percentage on the number of time series
+        :param limit_ts_len: limit the length of the time series, similar to limit_ts_num
         """
         self.norm_ds_path = normalized_f_dataset_path
         self.norm_ds = DatasetH5(normalized_f_dataset_path)
@@ -22,17 +26,20 @@ class FourierApproximation:
         """:type pruning_matrix: np.ndarray """
         self.batches = None
         """:type batches: list"""
-        self.correlation_matrix = np.zeros(shape=(len(self.norm_ds), len(self.norm_ds)), dtype="float", order="C")
-        self.norm_cache = [None] * len(self.norm_ds)
-        self.coeff_cache = [None] * len(self.norm_ds)
-        self.m = len(self.norm_ds[0])
+        self.size = calc_limit(limit_ts_num, self.size)
+        self.max_ts_len = calc_limit(limit_ts_len,
+                                     len(self.norm_ds[0]))  # assuming that every ts has the same length
+        self.correlation_matrix = np.zeros(shape=(self.size, self.size), dtype="float", order="C")
+        self.norm_cache = [None] * self.size
+        self.coeff_cache = [None] * self.size
+        self.m = self.max_ts_len
 
         logging.debug("Begin computation of fourier coefficients...")
-        for i in range(len(self.norm_ds)):
-            self.coeff_cache[i] = self.norm_ds.compute_fourier(i, 10000)
+        for i in range(self.size):
+            self.coeff_cache[i] = self.norm_ds.compute_fourier(i)
 
-        # with open("pearson_correlation_matrix.pickle", "rb") as f:
-        #     self.pearson = pickle.load(f)
+            # with open("pearson_correlation_matrix.pickle", "rb") as f:
+            #     self.pearson = pickle.load(f)
 
     def __load_batch_to_cache(self, batch: list):
         """
@@ -54,7 +61,7 @@ class FourierApproximation:
         """
         clears the cache
         """
-        self.norm_cache = [None] * len(self.norm_ds)
+        self.norm_cache = [None] * self.size
 
     def __get_pruning_matrix(self, k: int, T: float, recompute=False) -> np.ndarray:
         """
@@ -75,7 +82,7 @@ class FourierApproximation:
         If the batches have been computed previously it is returned without recomputation, unless
         recompute is set to True
         """
-        self.batches = [[x for x in range(len(self.norm_ds))]]  # bypass batch computation with Fiduccia
+        self.batches = [[x for x in range(self.size)]]  # bypass batch computation with Fiduccia
         # assert self.pruning_matrix is not None
         # if self.batches is not None and recompute is False:
         #     return self.batches
