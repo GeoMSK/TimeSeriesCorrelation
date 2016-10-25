@@ -1,4 +1,5 @@
 from Dataset.DatasetH5 import DatasetH5
+from Util import calc_limit
 import numpy as np
 import logging
 import time
@@ -9,17 +10,23 @@ __author__ = 'gm'
 
 
 class BooleanCorrelation:
-    def __init__(self, t_dataset_path: str, validation=False):
+    def __init__(self, t_dataset_path: str, validation=False, limit_ts_num=None, limit_ts_len=None):
         """
         :param t_dataset_path: original dataset path
+        :param limit_ts_num: limit the number of time series to be processed. May be an integer (eg 1000) or a string (eg %70)
+        in case it is a string it represents a percentage on the number of time series
+        :param limit_ts_len: limit the length of the time series, similar to limit_ts_num
         """
         self.norm_ds_path = t_dataset_path
         self.norm_ds = DatasetH5(t_dataset_path)
-        self.UB = np.full(shape=(len(self.norm_ds), len(self.norm_ds)), fill_value=sys.maxsize, dtype="float32",
+        self.size = calc_limit(limit_ts_num, self.size)
+        self.max_ts_len = calc_limit(limit_ts_len,
+                                     len(self.norm_ds[0]))  # assuming that every ts has the same length
+        self.UB = np.full(shape=(self.size, self.size), fill_value=sys.maxsize, dtype="float32",
                           order="C")
-        self.LB = np.zeros(shape=(len(self.norm_ds), len(self.norm_ds)), dtype="float32", order="C")
-        self.CB = np.zeros(shape=(len(self.norm_ds), len(self.norm_ds)), dtype="b1", order="C")
-        self.cache = [None] * len(self.norm_ds)
+        self.LB = np.zeros(shape=(self.size, self.size), dtype="float32", order="C")
+        self.CB = np.zeros(shape=(self.size, self.size), dtype="b1", order="C")
+        self.cache = [None] * self.size
         self.logger = logging.getLogger("Correlation2")
         if validation:
             self.c = PearsonCorrelation(self.norm_ds_path)
@@ -27,13 +34,13 @@ class BooleanCorrelation:
 
     def get_ts(self, i):
         if self.cache[i] is None:
-            self.cache[i] = self.norm_ds[i].value
+            self.cache[i] = self.norm_ds[i].value[:self.max_ts_len]
 
         return self.cache[i]
 
     def boolean_approximation(self, T: float):
-        m = len(self.norm_ds[0])
-        n = len(self.norm_ds)
+        m = self.max_ts_len
+        n = self.size
         theta = np.sqrt(2 * m * (1 - T))
 
         self.logger.debug("m: %d  n: %d  theta:%f" % (m, n, theta))
