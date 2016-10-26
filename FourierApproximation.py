@@ -26,7 +26,7 @@ class FourierApproximation:
         """:type pruning_matrix: np.ndarray """
         self.batches = None
         """:type batches: list"""
-        self.size = calc_limit(limit_ts_num, self.size)
+        self.size = calc_limit(limit_ts_num, len(self.norm_ds))
         self.max_ts_len = calc_limit(limit_ts_len,
                                      len(self.norm_ds[0]))  # assuming that every ts has the same length
         self.correlation_matrix = np.zeros(shape=(self.size, self.size), dtype="float", order="C")
@@ -55,7 +55,7 @@ class FourierApproximation:
         """
         assert isinstance(ts, int)
         if self.norm_cache[ts] is None:
-            self.norm_cache[ts] = self.norm_ds[ts].value
+            self.norm_cache[ts] = self.norm_ds[ts].value[:self.max_ts_len]
 
     def __clear_cache(self):
         """
@@ -230,7 +230,7 @@ class FourierApproximation:
         s2 = 0
         if T:
             theta = np.sqrt(2 * (1 - T))
-        while k < self.m:
+        while k < self.m and k < len(fft1):
             k += 1
             if T and np.linalg.norm(fft1[0:k] - fft2[0:k]) > theta:
                 return None, None, None
@@ -242,5 +242,5 @@ class FourierApproximation:
             if min(s1 * 2, s2 * 2) >= 1 - (e / 2):
                 break
         assert k <= self.m / 2
-        # logging.debug("k: " + str(k))
+        # logging.debug("k: %d (total: %d)" % (k, len(fft1)))
         return k, fft1[0:k], fft2[0:k]

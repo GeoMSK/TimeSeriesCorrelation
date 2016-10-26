@@ -63,7 +63,7 @@ class DatasetH5:
         if not disable_store:
             coeff_db.create_dataset(time_series, (len(fft),), data=fft, compression="gzip", compression_opts=9)
             coeff_db.close()
-        return fft[0:k]
+        return fft[0:k-1]
 
     @staticmethod
     def __get_next_power_of_2(x: int) -> int:

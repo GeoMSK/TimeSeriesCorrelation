@@ -19,7 +19,7 @@ class BooleanCorrelation:
         """
         self.norm_ds_path = t_dataset_path
         self.norm_ds = DatasetH5(t_dataset_path)
-        self.size = calc_limit(limit_ts_num, self.size)
+        self.size = calc_limit(limit_ts_num, len(self.norm_ds))
         self.max_ts_len = calc_limit(limit_ts_len,
                                      len(self.norm_ds[0]))  # assuming that every ts has the same length
         self.UB = np.full(shape=(self.size, self.size), fill_value=sys.maxsize, dtype="float32",
