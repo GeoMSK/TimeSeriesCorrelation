@@ -1,5 +1,7 @@
 __author__ = 'gm'
 
+import numpy as np
+
 
 def calc_limit(limit, num: int) -> int:
     """
@@ -23,3 +25,31 @@ def calc_limit(limit, num: int) -> int:
         else:
             ret = num if int(limit) > num else int(limit)
     return ret
+
+
+def euclidean_distance(l1: np.ndarray, l2: np.ndarray, k=None) -> float:
+    """
+    Calculate the euclidean distance between l1 and l2. Limit their size to k, if k is specified
+    :return: the euclidean distance of l1[0:k] and l2[0:k] if k is given or l1 and l2 if not
+    """
+    assert len(l1) == len(l2)
+    s = 0
+    if k is None or k > len(l1):
+        k = len(l1)
+    for i in range(k):
+        s += np.abs(l1[i] - l2[i]) ** 2  # np.abs is needed for complex numbers
+    return np.sqrt(s)
+
+
+def euclidean_distance_squared(l1: np.ndarray, l2: np.ndarray, k=None) -> float:
+    """
+    Calculate the squared euclidean distance between l1 and l2. Limit their size to k, if k is specified
+    :return: the euclidean distance of l1[0:k] and l2[0:k] if k is given or l1 and l2 if not
+    """
+    assert len(l1) == len(l2)
+    s = 0
+    if k is None or k > len(l1):
+        k = len(l1)
+    for i in range(k):
+        s += np.abs(l1[i] - l2[i]) ** 2  # np.abs is needed for complex numbers
+    return s

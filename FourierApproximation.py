@@ -1,13 +1,11 @@
-from PruningMatrix import PruningMatrix
-from Caching import Caching
-from Dataset.DatasetH5 import DatasetH5
-from Dataset.DatasetDBNormalizer import DatasetDBNormalizer
-from Util import calc_limit
-import numpy as np
 import logging
-import time
+
+import numpy as np
 from profilehooks import profile
-import pickle
+
+from Dataset.DatasetH5 import DatasetH5
+from PruningMatrix import PruningMatrix
+from Util import calc_limit, euclidean_distance_squared
 
 __author__ = 'gm'
 
@@ -90,6 +88,7 @@ class FourierApproximation:
         # self.batches = c.calculate_batches()
         # return self.batches
 
+    @profile(filename="profiler.data", immediate="False", stdout=False)
     def find_correlations(self, k: int, T: float, B: int, e: float, recompute=False):
         """
         find correlations between timeseries of the given dataset
@@ -165,17 +164,18 @@ class FourierApproximation:
         k, fft1, fft2 = self.compute_fourrier_coeff_for_ts_pair(t1, t2, e, T)
         if k is None:
             return 0
-        assert len(fft1) == k
-        assert len(fft2) == k
-        approx_corr = self.__aprox_correlation(fft1, fft2)
+
+        approx_corr = self.__aprox_correlation(fft1, fft2, k)
 
         # if approx_corr >= 0.7+e and self.pearson[t1][t2] < 0.7 or approx_corr < 0.7-e and self.pearson[t1][t2] >= 0.7:
         #     raise Exception("[%d,%d]: %f(real) %f(approx) k: %d e:%f" % (t1, t2, self.pearson[t1][t2], approx_corr, k, e))
 
         return approx_corr
 
-    def __aprox_correlation(self, fft1: np.ndarray, fft2: np.ndarray):
-        return 1 - (np.linalg.norm(fft1 - fft2) ** 2)
+    def __aprox_correlation(self, fft1: np.ndarray, fft2: np.ndarray, k=None):
+        return 1 - euclidean_distance_squared(fft1, fft2, k)
+        # return 1 - (np.linalg.norm(fft1 - fft2) ** 2)
+
 
     def __true_correlation(self, t1: int, t2: int):
         """
@@ -228,19 +228,20 @@ class FourierApproximation:
         assert sum(np.abs(fft2) ** 2) - 1 < 0.000001
         s1 = 0
         s2 = 0
-        if T:
-            theta = np.sqrt(2 * (1 - T))
-        while k < self.m and k < len(fft1):
+        # if T:
+        #     theta = np.sqrt(2 * (1 - T))
+        const_val = 1 - (e / 2)
+        while k < self.m:
             k += 1
-            if T and np.linalg.norm(fft1[0:k] - fft2[0:k]) > theta:
-                return None, None, None
+            # if T and np.linalg.norm(fft1[0:k] - fft2[0:k]) > theta:
+            #     return None, None, None
 
             s1 += np.power(np.abs(fft1[k - 1]), 2)
             s2 += np.power(np.abs(fft2[k - 1]), 2)
             # logging.debug("k: %d  s1: %.6f  s2: %.6f  %.2f  m: %d" % (k, s1, s2, 1 - (e / 2), m))
             # logging.debug("\t%f >= %f" % (min(s1 * 2, s2 * 2), 1 - (e / 2)))
-            if min(s1 * 2, s2 * 2) >= 1 - (e / 2):
+            if min(s1 * 2, s2 * 2) >= const_val:
                 break
         assert k <= self.m / 2
         # logging.debug("k: %d (total: %d)" % (k, len(fft1)))
-        return k, fft1[0:k], fft2[0:k]
+        return k, fft1, fft2
