@@ -30,7 +30,7 @@ def calc_limit(limit, num: int) -> int:
 def euclidean_distance(l1: np.ndarray, l2: np.ndarray, k=None) -> float:
     """
     Calculate the euclidean distance between l1 and l2. Limit their size to k, if k is specified
-    :return: the euclidean distance of l1[0:k] and l2[0:k] if k is given or l1 and l2 if not
+    :return: the euclidean distance of l1[0:k] and l2[0:k] if k is given or of l1 and l2 if not
     """
     assert len(l1) == len(l2)
     s = 0
@@ -44,7 +44,7 @@ def euclidean_distance(l1: np.ndarray, l2: np.ndarray, k=None) -> float:
 def euclidean_distance_squared(l1: np.ndarray, l2: np.ndarray, k=None) -> float:
     """
     Calculate the squared euclidean distance between l1 and l2. Limit their size to k, if k is specified
-    :return: the euclidean distance of l1[0:k] and l2[0:k] if k is given or l1 and l2 if not
+    :return: the euclidean distance of l1[0:k] and l2[0:k] if k is given or of l1 and l2 if not
     """
     assert len(l1) == len(l2)
     s = 0
