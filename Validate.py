@@ -2,29 +2,33 @@ import numpy as np
 import pickle
 import argparse
 import os
+import time
 from Dataset.DatasetH5 import DatasetH5
 
 __author__ = 'gm'
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-f", "--fourier-approximation-file", default="fourier_approximation_correlation_matrix.pickle",
-                    help="the path to the fourier approximation correlation pickle file")
+                    help="the path to the fourier approximation correlation pickle file. "
+                         "Default fourier_approximation_correlation_matrix.pickle")
 parser.add_argument("-b", "--boolean-correlation-file", default="boolean_correlation_matrix.pickle",
-                    help="the path to the boolean correlation pickle file")
+                    help="the path to the boolean correlation pickle file. "
+                         "Default boolean_correlation_matrix.pickle")
 parser.add_argument("-p", "--pearson-correlation-file", default="pearson_correlation_matrix.pickle",
-                    help="the path to the pearson correlation pickle file")
+                    help="the path to the pearson correlation pickle file. "
+                         "Default pearson_correlation_matrix.pickle")
 parser.add_argument("-k", type=int, default=5,
-                    help="The fourier coefficients to be used for the pruning matrix")
+                    help="The fourier coefficients to be used for the pruning matrix. Default 5")
 parser.add_argument("-T", type=float, default=0.7,
-                    help="The threshold")
+                    help="The threshold. Default 0.7")
 parser.add_argument("-e", type=float, default=0.04,
-                    help="The approximation error")
+                    help="The approximation error. Default 0.04")
 parser.add_argument("--original-dataset", default="./test_resources/database1.h5",
-                    help="The original h5 dataset file (non normalized)")
+                    help="The original h5 dataset file (non normalized). Default ./test_resources/database1.h5")
 parser.add_argument("--normalized-dataset", default="./test_resources/dataset1_normalized.h5",
-                    help="The normalized h5 dataset file")
+                    help="The normalized h5 dataset file. Default ./test_resources/dataset1_normalized.h5")
 parser.add_argument("--results-folder", default="results",
-                    help="the folder where the results will be stored")
+                    help="the folder where the results will be stored. Default results")
 parser.add_argument("--skip-processing", action="store_true", default=False,
                     help="If this is set the TimeSeries Correlation does not perform any processing and "
                          "the validation will occur in existing files")
@@ -36,7 +40,8 @@ parser.add_argument("-dp", action="store_true",
                     help="Disable pearson correlation matrix validation")
 parser.add_argument("-v", action="store_true",
                     help="Produce more output")
-
+parser.add_argument("-O", action="store_true",
+                    help="Add the python optimization flag")
 args = parser.parse_args()
 results_folder = args.results_folder
 if not os.path.exists(results_folder):
@@ -52,20 +57,23 @@ h5_dataset_norm = args.normalized_dataset
 k = args.k
 T = args.T
 e = args.e
-
+opt = "-O" if args.O else ""
 if not args.skip_processing:
-    print("Executing Pearson...")
-    os.system("python3 TimeSeriesCorrelation.py corr --alg 0 -k %d -T %f -e %f --out %s %s" % (
-        k, T, e, pearson_correlation_file, h5_dataset_norm))
-    print("Executing Fourier...")
-    os.system("python3 TimeSeriesCorrelation.py corr --alg 1 -k %d -T %f -e %f --out %s %s" % (
-        k, T, e, fourier_approximation_file, h5_dataset_norm))
-    print("Executing Boolean...")
-    os.system("python3 TimeSeriesCorrelation.py corr --alg 2 -k %d -T %f -e %f --out %s %s" % (
-        k, T, e, boolean_approximation_file, h5_dataset_norm))
-
-# h5_database_file = "./test_resources/database1.h5"  # original h5 database
-# h5_database_file = "./database2.h5"  # original h5 database
+    print("Executing Pearson... ", end="")
+    t = time.time()
+    os.system("python3 %s TimeSeriesCorrelation.py corr --alg 0 -k %d -T %f -e %f --out %s %s" % (
+        opt, k, T, e, pearson_correlation_file, h5_dataset_norm))
+    print("time: %.3f min" % ((time.time() - t) / 60.0))
+    print("Executing Fourier... ", end="")
+    t = time.time()
+    os.system("python3 %s TimeSeriesCorrelation.py corr --alg 1 -k %d -T %f -e %f --out %s %s" % (
+        opt, k, T, e, fourier_approximation_file, h5_dataset_norm))
+    print("time: %.3f min" % ((time.time() - t) / 60.0))
+    print("Executing Boolean... ", end="")
+    t = time.time()
+    os.system("python3 %s TimeSeriesCorrelation.py corr --alg 2 -k %d -T %f -e %f --out %s %s" % (
+        opt, k, T, e, boolean_approximation_file, h5_dataset_norm))
+    print("time: %.3f min" % ((time.time() - t) / 60.0))
 
 with open(fourier_approximation_file, "rb") as f:
     fourier_approximation = pickle.load(f)

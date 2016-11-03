@@ -1,11 +1,9 @@
 import logging
-
 import numpy as np
 from profilehooks import profile
-
 from Dataset.DatasetH5 import DatasetH5
 from PruningMatrix import PruningMatrix
-from Util import calc_limit, euclidean_distance_squared
+from Util import calc_limit, euclidean_distance_squared, euclidean_distance
 
 __author__ = 'gm'
 
@@ -35,9 +33,6 @@ class FourierApproximation:
         logging.debug("Begin computation of fourier coefficients...")
         for i in range(self.size):
             self.coeff_cache[i] = self.norm_ds.compute_fourier(i)
-
-            # with open("pearson_correlation_matrix.pickle", "rb") as f:
-            #     self.pearson = pickle.load(f)
 
     def __load_batch_to_cache(self, batch: list):
         """
@@ -176,7 +171,6 @@ class FourierApproximation:
         return 1 - euclidean_distance_squared(fft1, fft2, k)
         # return 1 - (np.linalg.norm(fft1 - fft2) ** 2)
 
-
     def __true_correlation(self, t1: int, t2: int):
         """
         compute the true correlation between two time-series. That is the pearson correlation between them
@@ -228,13 +222,13 @@ class FourierApproximation:
         assert sum(np.abs(fft2) ** 2) - 1 < 0.000001
         s1 = 0
         s2 = 0
-        # if T:
-        #     theta = np.sqrt(2 * (1 - T))
+        if T:
+            theta = np.sqrt(2 * (1 - T))
         const_val = 1 - (e / 2)
-        while k < self.m:
-            k += 1
+        while ++k < self.m:
+            if T and euclidean_distance(fft1, fft2, k) > theta:
             # if T and np.linalg.norm(fft1[0:k] - fft2[0:k]) > theta:
-            #     return None, None, None
+                return None, None, None
 
             s1 += np.power(np.abs(fft1[k - 1]), 2)
             s2 += np.power(np.abs(fft2[k - 1]), 2)

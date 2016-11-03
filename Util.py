@@ -1,6 +1,6 @@
-__author__ = 'gm'
-
 import numpy as np
+
+__author__ = 'gm'
 
 
 def calc_limit(limit, num: int) -> int:
