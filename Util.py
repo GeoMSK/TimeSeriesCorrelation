@@ -37,7 +37,7 @@ def euclidean_distance(l1: np.ndarray, l2: np.ndarray, k=None) -> float:
     if k is None or k > len(l1):
         k = len(l1)
     for i in range(k):
-        s += np.abs(l1[i] - l2[i]) ** 2  # np.abs is needed for complex numbers
+        s += np.power(np.abs(l1[i] - l2[i]), 2)  # np.abs is needed for complex numbers
     return np.sqrt(s)
 
 
@@ -51,5 +51,5 @@ def euclidean_distance_squared(l1: np.ndarray, l2: np.ndarray, k=None) -> float:
     if k is None or k > len(l1):
         k = len(l1)
     for i in range(k):
-        s += np.abs(l1[i] - l2[i]) ** 2  # np.abs is needed for complex numbers
+        s += np.power(np.abs(l1[i] - l2[i]), 2)  # np.abs is needed for complex numbers
     return s

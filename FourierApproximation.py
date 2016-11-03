@@ -212,7 +212,7 @@ class FourierApproximation:
         :return: the number of coefficients needed to satisfy the error bound and the coefficients
         :rtype: int, np.ndarray, np.ndarray
         """
-        k = 0
+        k = 1
         # fft1 = self.norm_ds.compute_fourier(ts1, self.m)
         # fft2 = self.norm_ds.compute_fourier(ts2, self.m)
         fft1 = self.coeff_cache[ts1]
@@ -222,12 +222,16 @@ class FourierApproximation:
         assert sum(np.abs(fft2) ** 2) - 1 < 0.000001
         s1 = 0
         s2 = 0
+        eucl = 0
         if T:
             theta = np.sqrt(2 * (1 - T))
         const_val = 1 - (e / 2)
-        while ++k < self.m:
-            if T and euclidean_distance(fft1, fft2, k) > theta:
+        while k < self.m:
+            # if T and euclidean_distance(fft1, fft2, k) > theta:
             # if T and np.linalg.norm(fft1[0:k] - fft2[0:k]) > theta:
+            #     return None, None, None
+            eucl += np.abs(fft1[k - 1] - fft2[k - 1]) ** 2
+            if np.sqrt(eucl) > theta:
                 return None, None, None
 
             s1 += np.power(np.abs(fft1[k - 1]), 2)
@@ -236,6 +240,7 @@ class FourierApproximation:
             # logging.debug("\t%f >= %f" % (min(s1 * 2, s2 * 2), 1 - (e / 2)))
             if min(s1 * 2, s2 * 2) >= const_val:
                 break
+            k += 1
         assert k <= self.m / 2
         # logging.debug("k: %d (total: %d)" % (k, len(fft1)))
         return k, fft1, fft2
