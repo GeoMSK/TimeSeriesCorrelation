@@ -232,6 +232,7 @@ class FourierApproximation:
             #     return None, None, None
             eucl += np.abs(fft1[k - 1] - fft2[k - 1]) ** 2
             if np.sqrt(eucl) > theta:
+                # logging.debug("k: %d (total: %d) iteration cut" % (k, len(fft1)))
                 return None, None, None
 
             s1 += np.power(np.abs(fft1[k - 1]), 2)

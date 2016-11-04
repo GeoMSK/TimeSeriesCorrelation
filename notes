@@ -39,3 +39,11 @@
 
 # create 2nd normalized dataset
 ./TimeSeriesCorrelation.py h5norm database2.h5 dataset2_normalized.h5 -c 9
+
+
+#
+# Create a dataset using RandomWalk and test the algorithms
+#
+python3 RandomWalk.py test_random_walk.h5 -N 1000 --len 10000
+python3 TimeSeriesCorrelation.py h5norm test_random_walk.h5 test_random_walk_normalized.h5 -c 9
+python3 Validate.py -O --original-dataset test_random_walk.h5 --normalized-dataset test_random_walk_normalized.h5 --results-folder results_random_walk -dp -v

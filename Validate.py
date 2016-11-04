@@ -38,6 +38,12 @@ parser.add_argument("-db", action="store_true",
                     help="Disable boolean correlation matrix validation")
 parser.add_argument("-dp", action="store_true",
                     help="Disable pearson correlation matrix validation")
+parser.add_argument("-spp", action="store_true",
+                    help="Disable pearson correlation matrix computation")
+parser.add_argument("-spb", action="store_true",
+                    help="Disable boolean correlation matrix computation")
+parser.add_argument("-spf", action="store_true",
+                    help="Disable fourier approximation correlation matrix computation")
 parser.add_argument("-v", action="store_true",
                     help="Produce more output")
 parser.add_argument("-O", action="store_true",
@@ -59,27 +65,38 @@ T = args.T
 e = args.e
 opt = "-O" if args.O else ""
 if not args.skip_processing:
-    print("Executing Pearson... ", end="")
-    t = time.time()
-    os.system("python3 %s TimeSeriesCorrelation.py corr --alg 0 -k %d -T %f -e %f --out %s %s" % (
-        opt, k, T, e, pearson_correlation_file, h5_dataset_norm))
-    print("time: %.3f min" % ((time.time() - t) / 60.0))
-    print("Executing Fourier... ", end="")
-    t = time.time()
-    os.system("python3 %s TimeSeriesCorrelation.py corr --alg 1 -k %d -T %f -e %f --out %s %s" % (
-        opt, k, T, e, fourier_approximation_file, h5_dataset_norm))
-    print("time: %.3f min" % ((time.time() - t) / 60.0))
-    print("Executing Boolean... ", end="")
-    t = time.time()
-    os.system("python3 %s TimeSeriesCorrelation.py corr --alg 2 -k %d -T %f -e %f --out %s %s" % (
-        opt, k, T, e, boolean_approximation_file, h5_dataset_norm))
-    print("time: %.3f min" % ((time.time() - t) / 60.0))
+    if not args.spp:
+        print("Executing Pearson... ")
+        t = time.time()
+        cmd = "python3 %s TimeSeriesCorrelation.py corr --alg 0 -k %d -T %f -e %f --out %s %s" % (
+            opt, k, T, e, pearson_correlation_file, h5_dataset_norm)
+        print("cmd: " + cmd)
+        os.system(cmd)
+        print("time: %.3f min" % ((time.time() - t) / 60.0))
+    if not args.spf:
+        print("Executing Fourier... ")
+        t = time.time()
+        cmd = "python3 %s TimeSeriesCorrelation.py corr --alg 1 -k %d -T %f -e %f --out %s %s" % (
+            opt, k, T, e, fourier_approximation_file, h5_dataset_norm)
+        print("cmd: " + cmd)
+        os.system(cmd)
+        print("time: %.3f min" % ((time.time() - t) / 60.0))
+    if not args.spb:
+        print("Executing Boolean... ")
+        t = time.time()
+        cmd = "python3 %s TimeSeriesCorrelation.py corr --alg 2 -k %d -T %f -e %f --out %s %s" % (
+            opt, k, T, e, boolean_approximation_file, h5_dataset_norm)
+        print("cmd: " + cmd)
+        os.system(cmd)
+        print("time: %.3f min" % ((time.time() - t) / 60.0))
 
-with open(fourier_approximation_file, "rb") as f:
-    fourier_approximation = pickle.load(f)
+if not args.df:
+    with open(fourier_approximation_file, "rb") as f:
+        fourier_approximation = pickle.load(f)
 
-with open(boolean_approximation_file, "rb") as f:
-    boolean_approximation = pickle.load(f)
+if not args.db:
+    with open(boolean_approximation_file, "rb") as f:
+        boolean_approximation = pickle.load(f)
 
 with open(pearson_correlation_file, "rb") as f:
     pearson_correlation = pickle.load(f)
@@ -200,22 +217,28 @@ def assertBoolean(T, v=False):
 #  Begin validations
 #
 
-print("diagonal check fourier...", end="")
-assert_diagonal(fourier_approximation)
-print(" ok")
-print("diagonal check boolean...", end="")
-assert_diagonal(boolean_approximation)
-print(" ok")
-print("diagonal check pearson...", end="")
-assert_diagonal(pearson_correlation)
-print(" ok")
+if not args.df:
+    print("diagonal check fourier...", end="")
+    assert_diagonal(fourier_approximation)
+    print(" ok")
+if not args.db:
+    print("diagonal check boolean...", end="")
+    assert_diagonal(boolean_approximation)
+    print(" ok")
+if not args.dp:
+    print("diagonal check pearson...", end="")
+    assert_diagonal(pearson_correlation)
+    print(" ok")
 
-print("Computing num_fourier...", end="")
-num_fourier = num_corr(fourier_approximation, T)
-print(" done")
-print("Computing num_boolean...", end="")
-num_boolean = num_corr(boolean_approximation)
-print(" done")
+if not args.df:
+    print("Computing num_fourier...", end="")
+    num_fourier = num_corr(fourier_approximation, T)
+    print(" done")
+if not args.db:
+    print("Computing num_boolean...", end="")
+    num_boolean = num_corr(boolean_approximation)
+    print(" done")
+
 print("Computing num_pearson...", end="")
 num_pearson = num_corr(pearson_correlation, T)
 print(" done")
@@ -232,13 +255,15 @@ if not args.dp:
 
 print("")
 print("Threshold T: %.4f  error e: %.4f" % (T, e))
-print("Correlated pairs based on \033[1mfourier approximation\033[0m: %d\n"
-      "                                false positives: %d\n"
-      "                                false negatives: %d\n"
-      "                                errors(pos: %d  neg: %d)\n"
-      "                                %d-%d+%d = %d" %
-      (num_fourier, f_false_positives, f_false_negatives, f_erroneous_positives, f_erroneous_negatives,
-       num_fourier, f_false_positives, f_false_negatives, num_fourier - f_false_positives + f_false_negatives))
-print("Correlated pairs based on \033[1mboolean approximation\033[0m: %d  errors(pos: %d  neg: %d)" %
-      (num_boolean, b_erroneous_positives, b_erroneous_negatives))
+if not args.df:
+    print("Correlated pairs based on \033[1mfourier approximation\033[0m: %d\n"
+          "                                false positives: %d\n"
+          "                                false negatives: %d\n"
+          "                                errors(pos: %d  neg: %d)\n"
+          "                                %d-%d+%d = %d" %
+          (num_fourier, f_false_positives, f_false_negatives, f_erroneous_positives, f_erroneous_negatives,
+           num_fourier, f_false_positives, f_false_negatives, num_fourier - f_false_positives + f_false_negatives))
+if not args.db:
+    print("Correlated pairs based on \033[1mboolean approximation\033[0m: %d  errors(pos: %d  neg: %d)" %
+          (num_boolean, b_erroneous_positives, b_erroneous_negatives))
 print("Correlated pairs based on \033[1mpearson correlation\033[0m: \033[32m%d\033[0m" % num_pearson)

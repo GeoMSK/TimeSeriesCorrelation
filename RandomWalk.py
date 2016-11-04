@@ -1,5 +1,5 @@
 from enum import Enum
-from numpy.random import normal
+import numpy as np
 import h5py
 import argparse
 
@@ -34,15 +34,19 @@ class RandomWalk:
         self.compression = compression
 
     @staticmethod
-    def gaussian_random_walk(m: float, s: float, size=None):
+    def gaussian_random_walk(m: float, s: float, size=None) -> np.ndarray:
         """
         :param m: Mean (“centre”) of the distribution
         :param s: Standard deviation (spread or “width”) of the distribution
-        :param size: Output shape. If the given shape is, e.g., (m, n, k), then m * n * k samples are drawn.
-        Default is None, in which case a single value is returned
+        :param size: the size of the signal to be returned
         :return: samples from the normal distribution, as defined by the parameters given
         """
-        return normal(m, s, size)
+        array = np.array(np.random.normal(m, s, size))
+        s = 0
+        for i in range(size):
+            array[i] += s
+            s = array[i]
+        return array
 
     def generate_dataset(self, path: str, signals_no: int, signals_size: int):
         """
@@ -80,9 +84,9 @@ if __name__ == '__main__':
                         help="The length of each signal")
     parser.add_argument("-m", type=float, default=0.0,
                         help="Mean (“centre”) of the distribution. Applicable only to Gaussian RandomWalk. Default 0")
-    parser.add_argument("-s", type=float, default=10.0,
+    parser.add_argument("-s", type=float, default=1.0,
                         help="Standard deviation (spread or “width”) of the distribution. "
-                             "Applicable only to Gaussian RandomWalk. Default 10")
+                             "Applicable only to Gaussian RandomWalk. Default 1")
     parser.add_argument("-c", type=int, default=9,
                         help="Compression level. 0 is the lowest 9 is the highest")
 
