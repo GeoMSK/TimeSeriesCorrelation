@@ -4,6 +4,7 @@ import numpy as np
 import logging
 import time
 import sys
+from profilehooks import profile
 from PearsonCorrelation import PearsonCorrelation
 
 __author__ = 'gm'
@@ -38,6 +39,7 @@ class BooleanCorrelation:
 
         return self.cache[i]
 
+    @profile(filename="boolean_profile.data", immediate="False", stdout=False)
     def boolean_approximation(self, T: float):
         m = self.max_ts_len
         n = self.size

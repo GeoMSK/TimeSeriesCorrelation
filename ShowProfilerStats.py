@@ -1,8 +1,9 @@
 import pstats
+import sys
 
 __author__ = 'gm'
 
-profile_data_file = "profiler.data"
+profile_data_file = sys.argv[1]
 sort_by = "cumulative"
 
 

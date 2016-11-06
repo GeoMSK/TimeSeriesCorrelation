@@ -83,7 +83,7 @@ class FourierApproximation:
         # self.batches = c.calculate_batches()
         # return self.batches
 
-    @profile(filename="profiler.data", immediate="False", stdout=False)
+    @profile(filename="fourier_profile.data", immediate="False", stdout=False)
     def find_correlations(self, k: int, T: float, B: int, e: float, recompute=False):
         """
         find correlations between timeseries of the given dataset
