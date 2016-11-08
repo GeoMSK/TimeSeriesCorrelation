@@ -110,42 +110,40 @@ class BooleanCorrelation:
                             print("[%d,%d]:%f bool:%d  (ed)%f <= %f(theta)" %
                                   (i, j, self.c.corr(i, j), CB[i][j], ed, theta))
         self.logger.debug("Exact distance computations: %d/%d" % (s, total))
-        self.logger.debug("Avg Euclidean distance computation time: %.3f ms" % (BooleanCorrelation.avg * 1000))
+        # self.logger.debug("Avg Euclidean distance computation time: %.3f ms" % (BooleanCorrelation.avg * 1000))
         return CB
 
     def _calc_UB_LB(self, UB, LB, i, j):
         #
         # UB[i][j] = min([UB[i][u] + UB[u][j] for u in range(i + 1, j)])
-        #
-        m = np.inf
-        for u in range(i + 1, j):
-            t = UB[i][u] + UB[u][j]
-            if t < m:
-                m = t
-        UB[i][j] = m
-
-        #
         # LB[i][j] = max([max(LB[i][u] - UB[u][j], LB[u][j] - UB[i][u]) for u in range(i + 1, j)])
         #
-        m = -np.inf
+        m = np.inf
+        m2 = -np.inf
+        UBi = UB[i]
+        LBi = LB[i]
         for u in range(i + 1, j):
-            t = max(LB[i][u] - UB[u][j], LB[u][j] - UB[i][u])
-            if t > m:
+            t = UBi[u] + UB[u][j]
+            if t < m:
                 m = t
-        LB[i][j] = m
+            t2 = max(LBi[u] - UB[u][j], LB[u][j] - UBi[u])
+            if t2 > m2:
+                m2 = t2
+        UBi[j] = m
+        LBi[j] = m2
 
-    avg = 0
-    n = 0
+    # avg = 0
+    # n = 0
 
     def d(self, t1: int, t2: int):
-        BooleanCorrelation.n += 1
+        # BooleanCorrelation.n += 1
         ts1 = self.get_ts(t1)
         ts2 = self.get_ts(t2)
-        begin = time.time()
+        # begin = time.time()
         euclidean_distance = np.linalg.norm(ts1 - ts2)
-        end = time.time()
-        dur = end - begin
-        BooleanCorrelation.avg = (BooleanCorrelation.n - 1) * BooleanCorrelation.avg / \
-                                 BooleanCorrelation.n + dur / BooleanCorrelation.n
+        # end = time.time()
+        # dur = end - begin
+        # BooleanCorrelation.avg = (BooleanCorrelation.n - 1) * BooleanCorrelation.avg / \
+        #                          BooleanCorrelation.n + dur / BooleanCorrelation.n
 
         return euclidean_distance
