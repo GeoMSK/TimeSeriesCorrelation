@@ -154,7 +154,11 @@ def num_corr(table, T=None):
 
 
 def assert_diagonal(table):
-    n = table.shape[0]
+    if isinstance(table, np.ndarray):
+        n = table.shape[0]
+    else:
+        assert isinstance(table, list)
+        n = len(table)
     for i in range(n):
         for j in range(i + 1):
             assert table[i][j] == 0
