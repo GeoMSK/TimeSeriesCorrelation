@@ -31,9 +31,9 @@ class BooleanCorrelation:
         #                   order="C")
         # self.LB = np.zeros(shape=(self.size, self.size), dtype="float32", order="C")
         # self.CB = np.zeros(shape=(self.size, self.size), dtype="b1", order="C")
-        self.UB = [[sys.maxsize] * self.size] * self.size
-        self.LB = [[0] * self.size] * self.size
-        self.CB = [[0] * self.size] * self.size
+        self.UB = [[sys.maxsize for x in range(self.size)] for y in range(self.size)]
+        self.LB = [[0 for x in range(self.size)] for y in range(self.size)]
+        self.CB = [[0 for x in range(self.size)] for y in range(self.size)]
         self.cache = [None] * self.size
         self.logger = logging.getLogger("Correlation2")
         if validation:

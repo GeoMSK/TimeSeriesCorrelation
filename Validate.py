@@ -138,7 +138,7 @@ def assert_pearson():
 
 def num_corr(table, T=None):
     s = 0
-    n = table.shape[0]
+    n = table.shape[0] if isinstance(table, np.ndarray) else len(table)
     for i in range(n):
         for j in range(i + 1, n):
             # assert -1 <= table[i][j] <= 1
@@ -154,11 +154,7 @@ def num_corr(table, T=None):
 
 
 def assert_diagonal(table):
-    if isinstance(table, np.ndarray):
-        n = table.shape[0]
-    else:
-        assert isinstance(table, list)
-        n = len(table)
+    n = table.shape[0] if isinstance(table, np.ndarray) else len(table)
     for i in range(n):
         for j in range(i + 1):
             assert table[i][j] == 0
@@ -204,7 +200,7 @@ def assertBoolean(T, v=False):
     global b_erroneous_negatives
     bool = boolean_approximation
     pear = pearson_correlation
-    n = bool.shape[0]
+    n = bool.shape[0] if isinstance(bool, np.ndarray) else len(bool)
     for i in range(n):
         for j in range(i + 1, n):
             if bool[i][j] == 1 and pear[i][j] < T:
