@@ -47,9 +47,8 @@ def euclidean_distance_squared(l1: np.ndarray, l2: np.ndarray, k=None) -> float:
     :return: the euclidean distance of l1[0:k] and l2[0:k] if k is given or of l1 and l2 if not
     """
     assert len(l1) == len(l2)
-    s = 0
     if k is None or k > len(l1):
         k = len(l1)
-    for i in range(k):
-        s += np.power(np.abs(l1[i] - l2[i]), 2)  # np.abs is needed for complex numbers
-    return s
+
+    return np.linalg.norm(l1[:k] - l2[:k])**2
+

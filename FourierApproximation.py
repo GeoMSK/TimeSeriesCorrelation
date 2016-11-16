@@ -33,6 +33,7 @@ class FourierApproximation:
         logging.debug("Begin computation of fourier coefficients...")
         for i in range(self.size):
             self.coeff_cache[i] = self.norm_ds.compute_fourier(i)
+        logging.debug("End computation of fourier coefficients...")
 
     def __load_batch_to_cache(self, batch: list):
         """
@@ -64,7 +65,7 @@ class FourierApproximation:
         """
         if self.pruning_matrix is not None and recompute is False:
             return self.pruning_matrix
-        pmatrix = PruningMatrix(self.norm_ds_path)
+        pmatrix = PruningMatrix(self.norm_ds_path, self.coeff_cache)
         self.pruning_matrix = pmatrix.compute_pruning_matrix(k, T)
         return self.pruning_matrix
 
@@ -168,7 +169,7 @@ class FourierApproximation:
         return approx_corr
 
     def __aprox_correlation(self, fft1: np.ndarray, fft2: np.ndarray, k=None):
-        return 1 - euclidean_distance_squared(fft1, fft2, k)
+        return 1 - euclidean_distance_squared(fft1, fft2, k) / self.m
         # return 1 - (np.linalg.norm(fft1 - fft2) ** 2)
 
     def __true_correlation(self, t1: int, t2: int):
@@ -218,20 +219,20 @@ class FourierApproximation:
         fft1 = self.coeff_cache[ts1]
         fft2 = self.coeff_cache[ts2]
 
-        assert sum(np.abs(fft1) ** 2) - 1 < 0.000001
-        assert sum(np.abs(fft2) ** 2) - 1 < 0.000001
+        assert abs(sum(np.abs(fft1) ** 2) - self.m) < 0.000001*self.m
+        assert abs(sum(np.abs(fft2) ** 2) - self.m) < 0.000001*self.m
         s1 = 0
         s2 = 0
         eucl = 0
         if T:
-            theta = np.sqrt(2 * (1 - T))
-        const_val = 1 - (e / 2)
+            theta = (1 + e - T) * self.m
+        const_val = (1 - e / 2) * self.m / 2.
         while k < self.m:
             # if T and euclidean_distance(fft1, fft2, k) > theta:
             # if T and np.linalg.norm(fft1[0:k] - fft2[0:k]) > theta:
             #     return None, None, None
             eucl += np.abs(fft1[k - 1] - fft2[k - 1]) ** 2
-            if np.sqrt(eucl) > theta:
+            if T and eucl > theta:
                 # logging.debug("k: %d (total: %d) iteration cut" % (k, len(fft1)))
                 return None, None, None
 
@@ -239,9 +240,10 @@ class FourierApproximation:
             s2 += np.power(np.abs(fft2[k - 1]), 2)
             # logging.debug("k: %d  s1: %.6f  s2: %.6f  %.2f  m: %d" % (k, s1, s2, 1 - (e / 2), m))
             # logging.debug("\t%f >= %f" % (min(s1 * 2, s2 * 2), 1 - (e / 2)))
-            if min(s1 * 2, s2 * 2) >= const_val:
+            if min(s1, s2) >= const_val:
                 break
             k += 1
         assert k <= self.m / 2
         # logging.debug("k: %d (total: %d)" % (k, len(fft1)))
+        print("k=",k)
         return k, fft1, fft2
