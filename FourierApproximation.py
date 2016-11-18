@@ -29,10 +29,13 @@ class FourierApproximation:
         self.norm_cache = [None] * self.size
         self.coeff_cache = [None] * self.size
         self.m = self.max_ts_len
+        self.min_k = [None] * self.size
 
         logging.debug("Begin computation of fourier coefficients...")
         for i in range(self.size):
             self.coeff_cache[i] = self.norm_ds.compute_fourier(i)
+            assert abs(sum(np.abs(self.coeff_cache[i]) ** 2) - self.m) < 0.000001 * self.m
+
         logging.debug("End computation of fourier coefficients...")
 
     def __load_batch_to_cache(self, batch: list):
@@ -113,6 +116,9 @@ class FourierApproximation:
                     nets += 1
                     pins += 2
         logging.info("cells: %d nets: %d pins: %d" % (n, nets, pins))
+        logging.info("Computing min_k for every time series...")
+        self.__compute_k(e)
+        logging.debug("Computation of min_k finished")
         logging.info("Begin computation of Batches...")
         self.__get_batches(B, recompute)
         logging.info("Batches computation finished. Total batches: %d" % len(self.batches))
@@ -157,19 +163,21 @@ class FourierApproximation:
         """
         assert t1 is not None
         assert t2 is not None
-        k, fft1, fft2 = self.compute_fourrier_coeff_for_ts_pair(t1, t2, e, T)
-        if k is None:
-            return 0
+        K = max(self.min_k[t1], self.min_k[t2])
+        assert K > 0
+        fft1 = self.coeff_cache[t1]
+        fft2 = self.coeff_cache[t2]
+        assert len(fft1) == len(fft2)
+        theta = (1 + e - T) * self.m
+        k = 1
+        dist = 0
+        while k <= K:
+            dist += np.abs(fft1[k - 1] - fft2[k - 1]) ** 2
+            if dist > theta:
+                return 0
+            k += 1
+        return 1 - dist / self.m
 
-        approx_corr = self.__aprox_correlation(fft1, fft2, k)
-
-        # if approx_corr >= 0.7+e and self.pearson[t1][t2] < 0.7 or approx_corr < 0.7-e and self.pearson[t1][t2] >= 0.7:
-        #     raise Exception("[%d,%d]: %f(real) %f(approx) k: %d e:%f" % (t1, t2, self.pearson[t1][t2], approx_corr, k, e))
-
-        return approx_corr
-
-    def __aprox_correlation(self, fft1: np.ndarray, fft2: np.ndarray, k=None):
-        return 1 - euclidean_distance_squared(fft1, fft2, k) / self.m
         # return 1 - (np.linalg.norm(fft1 - fft2) ** 2)
 
     def __true_correlation(self, t1: int, t2: int):
@@ -200,50 +208,19 @@ class FourierApproximation:
                 edges.append(current_batch[i])
         return edges
 
-    def compute_fourrier_coeff_for_ts_pair(self, ts1: int, ts2: int, e: float, T=None):
+    def __compute_k(self, e: float):
         """
-        Compute that many fourier coefficients for time-series ts1 and ts2, so that the approximation error is <= e.
-        If threshold T is given then at every iteration it is checked whether the euclidean distance d^2(X,Y) exceeds
-        sqrt(2m(1-T)) implying that corr(x,y) < T, if this happens then computation stops and None is returned
-
-        :param ts1: the time series to compute the fourier coefficients for
-        :type ts1: int
-        :param e: the approximation error bound the user wants to set
-        :type e: float
-        :return: the number of coefficients needed to satisfy the error bound and the coefficients
-        :rtype: int, np.ndarray, np.ndarray
+        Compute the minimum k for every timeseries, according to the paper, that will guarantee an approximation error e
         """
-        k = 1
-        # fft1 = self.norm_ds.compute_fourier(ts1, self.m)
-        # fft2 = self.norm_ds.compute_fourier(ts2, self.m)
-        fft1 = self.coeff_cache[ts1]
-        fft2 = self.coeff_cache[ts2]
-
-        assert abs(sum(np.abs(fft1) ** 2) - self.m) < 0.000001*self.m
-        assert abs(sum(np.abs(fft2) ** 2) - self.m) < 0.000001*self.m
-        s1 = 0
-        s2 = 0
-        eucl = 0
-        if T:
-            theta = (1 + e - T) * self.m
         const_val = (1 - e / 2) * self.m / 2.
-        while k < self.m:
-            # if T and euclidean_distance(fft1, fft2, k) > theta:
-            # if T and np.linalg.norm(fft1[0:k] - fft2[0:k]) > theta:
-            #     return None, None, None
-            eucl += np.abs(fft1[k - 1] - fft2[k - 1]) ** 2
-            if T and eucl > theta:
-                # logging.debug("k: %d (total: %d) iteration cut" % (k, len(fft1)))
-                return None, None, None
-
-            s1 += np.power(np.abs(fft1[k - 1]), 2)
-            s2 += np.power(np.abs(fft2[k - 1]), 2)
-            # logging.debug("k: %d  s1: %.6f  s2: %.6f  %.2f  m: %d" % (k, s1, s2, 1 - (e / 2), m))
-            # logging.debug("\t%f >= %f" % (min(s1 * 2, s2 * 2), 1 - (e / 2)))
-            if min(s1, s2) >= const_val:
-                break
-            k += 1
-        assert k <= self.m / 2
-        # logging.debug("k: %d (total: %d)" % (k, len(fft1)))
-        print("k=",k)
-        return k, fft1, fft2
+        for i in range(len(self.coeff_cache)):
+            fft = self.coeff_cache[i]
+            k = 1
+            s = 0
+            while k < self.m:
+                s += np.power(np.abs(fft[k - 1]), 2)
+                if s >= const_val:
+                    break
+                k += 1
+            assert k <= self.m / 2
+            self.min_k[i] = k
