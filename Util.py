@@ -1,4 +1,6 @@
 import numpy as np
+import logging
+from time import time
 
 __author__ = 'gm'
 
@@ -51,4 +53,15 @@ def euclidean_distance_squared(l1: np.ndarray, l2: np.ndarray, k=None) -> float:
         k = len(l1)
 
     return np.linalg.norm(l1[:k] - l2[:k])**2
+
+
+def time_it(func):
+    def wrapper(*args, **kwargs):
+        start = time()
+        ret = func(*args, **kwargs)
+        stop = time()
+        logging.debug("Function %s took %.3f min" % (func.__name__, (stop - start) / 60.))
+        return ret
+    wrapper.__name__ = func.__name__
+    return wrapper
 

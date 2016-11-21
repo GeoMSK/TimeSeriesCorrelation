@@ -1,5 +1,6 @@
 import logging
 import numpy as np
+from Util import time_it
 from profilehooks import profile
 from Dataset.DatasetH5 import DatasetH5
 from PruningMatrix import PruningMatrix
@@ -108,14 +109,14 @@ class FourierApproximation:
         logging.info("Begin computation of Pruning Matrix...")
         self.__get_pruning_matrix(k, T, recompute)
         n = self.pruning_matrix.shape[0]
-        nets = 0
-        pins = 0
-        for i in range(n):
-            for j in range(i + 1, n):
-                if self.pruning_matrix[i][j] == 1:
-                    nets += 1
-                    pins += 2
-        logging.info("cells: %d nets: %d pins: %d" % (n, nets, pins))
+        # nets = 0
+        # pins = 0
+        # for i in range(n):
+        #     for j in range(i + 1, n):
+        #         if self.pruning_matrix[i][j] == 1:
+        #             nets += 1
+        #             pins += 2
+        # logging.info("cells: %d nets: %d pins: %d" % (n, nets, pins))
         logging.info("Computing min_k for every time series...")
         self.__compute_k(e)
         logging.debug("Computation of min_k finished")
@@ -147,22 +148,23 @@ class FourierApproximation:
                 for i in range(len(tbatch)):  # for every ts in the (remaining) batch loaded
                     logging.debug("Processing ts %d of remaining batch %d" % (i, tb))
                     ts_i = tbatch[i]
-                    possibly_correlated = self.__get_edges(batch, ts_i)
+                    possibly_correlated = self.__get_edges(batch, ts_i)  # TODO: remove get_edges
                     if len(possibly_correlated) > 0:
                         self.__load_ts_to_cache(ts_i)
                         for ts_j in possibly_correlated:  # for every ts in current batch that is possibly correlated with the newly cached ts
-                            if self.pruning_matrix[ts_i][ts_j] == 1:  # check pruning matrix
-                                self.correlation_matrix[ts_i][ts_j] = self.__correlate(ts_i, ts_j, e, T)
+                            self.correlation_matrix[ts_i][ts_j] = self.__correlate(ts_i, ts_j, e, T)
             self.__clear_cache()
         return self.correlation_matrix
 
     # @profile(filename="profiler.data", immediate="True", stdout=False)
     def __correlate(self, t1: int, t2: int, e: float, T: float) -> float:
         """
-        compute the correlation between time-series t1 and t2
+        compute the correlation between time-series t1 and t2, consulting the PruningMatrix
         """
         assert t1 is not None
         assert t2 is not None
+        if self.pruning_matrix[t1, t2] == 0:  # check pruning matrix first
+            return 0
         K = max(self.min_k[t1], self.min_k[t2])
         assert K > 0
         fft1 = self.coeff_cache[t1]
@@ -208,6 +210,7 @@ class FourierApproximation:
                 edges.append(current_batch[i])
         return edges
 
+    @time_it
     def __compute_k(self, e: float):
         """
         Compute the minimum k for every timeseries, according to the paper, that will guarantee an approximation error e
