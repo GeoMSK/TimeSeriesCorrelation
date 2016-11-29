@@ -10,10 +10,6 @@ from PearsonCorrelation import PearsonCorrelation
 __author__ = 'gm'
 
 
-#
-#  Random access in python lists vs numpy arrays
-#  http://stackoverflow.com/questions/29281680/numpy-individual-element-access-slower-than-for-lists
-#
 class BooleanCorrelation:
     def __init__(self, t_dataset_path: str, validation=False, limit_ts_num=None, limit_ts_len=None):
         """
@@ -31,10 +27,7 @@ class BooleanCorrelation:
                           order="C")
         self.LB = np.zeros(shape=(self.size, self.size), dtype="float32", order="C")
         self.CB = np.zeros(shape=(self.size, self.size), dtype="b1", order="C")
-        
-        # self.UB = [[sys.maxsize for x in range(self.size)] for y in range(self.size)]
-        # self.LB = [[0 for x in range(self.size)] for y in range(self.size)]
-        # self.CB = [[0 for x in range(self.size)] for y in range(self.size)]
+
         self.cache = [None] * self.size
         self.logger = logging.getLogger("Correlation2")
         if validation:
@@ -63,20 +56,17 @@ class BooleanCorrelation:
         self.logger.debug("Processing diagonal... (n: %d)" % n)
 
         for i in range(n - 1):
-            # self.logger.debug("Processing %d,%d..." % (i, i + 1))
             ed = d(i, i + 1)
             UB[i,i+1] = LB[i,i+1] = ed
-            # self.logger.debug("%f <= %f" % (ed, theta))
             if ed <= theta:
                 CB[i,i+1] = 1
-                # if self.validation and self.c.corr(i, i + 1) < T:
-                #     print("[%d,%d]:%f bool:%d  (ed)%f <= %f(theta)" %
-                #           (i, i + 1, self.c.corr(i, i + 1), CB[i][i+1], ed, theta))
+                if self.validation and self.c.corr(i, i + 1) < T:
+                    print("[%d,%d]:%f bool:%d  (ed)%f <= %f(theta)" %
+                          (i, i + 1, self.c.corr(i, i + 1), CB[i,i+1], ed, theta))
             else:
-                pass
-                # if self.validation and self.c.corr(i, i + 1) >= T:
-                #     print("[%d,%d]:%f bool:%d  (ed)%f <= %f(theta)" %
-                #           (i, i + 1, self.c.corr(i, i + 1), CB[i][i+1], ed, theta))
+                if self.validation and self.c.corr(i, i + 1) >= T:
+                    print("[%d,%d]:%f bool:%d  (ed)%f <= %f(theta)" %
+                          (i, i + 1, self.c.corr(i, i + 1), CB[i,i+1], ed, theta))
         self.logger.debug("Initial Processing of diagonal finished")
         s = 0
         total = 0
@@ -85,72 +75,40 @@ class BooleanCorrelation:
             for i in range(n - k):
                 total += 1
                 j = i + k
-                # UB[i,j] = min([UB[i][u] + UB[u][j] for u in range(i + 1, j)])
+                # UB[i,j] = min([UB[i,u] + UB[u,j] for u in range(i + 1, j)])
                 UB[i,j] = np.min(  UB[i, i+1:j] + UB[i+1:j, j]   )
-                # LB[i,j] = max([max(LB[i][u] - UB[u][j], LB[u][j] - UB[i][u]) for u in range(i + 1, j)])
+                # LB[i,j] = max([max(LB[i,u] - UB[u,j], LB[u,j] - UB[i,u]) for u in range(i + 1, j)])
                 LB1 = np.max(LB[i, i+1:j] - UB[i+1:j, j])
                 LB2 = np.max(LB[i+1:j, j] - UB[i, i+1:j])
                 LB[i,j] = max(LB1, LB2)
-                # self._calc_UB_LB(UB, LB, i, j)
                 if UB[i,j] <= theta:
                     CB[i,j] = 1
-                    # if self.validation and self.c.corr(i, j) < T:
-                    #     print("[%d,%d]:%f bool:%d  (UB)%f <= %f(theta)" %
-                    #           (i, j, self.c.corr(i, j), CB[i,j], UB[i,j], theta))
+                    if self.validation and self.c.corr(i, j) < T:
+                        print("[%d,%d]:%f bool:%d  (UB)%f <= %f(theta)" %
+                              (i, j, self.c.corr(i, j), CB[i,j], UB[i,j], theta))
                 elif LB[i,j] > theta:
                     CB[i,j] = 0
-                    # if self.validation and self.c.corr(i, j) >= T:
-                    #     print("[%d,%d]:%f bool:%d  (LB)%f > %f(theta)" %
-                    #           (i, j, self.c.corr(i, j), CB[i,j], LB[i,j], theta))
+                    if self.validation and self.c.corr(i, j) >= T:
+                        print("[%d,%d]:%f bool:%d  (LB)%f > %f(theta)" %
+                              (i, j, self.c.corr(i, j), CB[i,j], LB[i,j], theta))
                 else:
                     s += 1
                     ed = d(i, j)
                     UB[i,j] = LB[i,j] = ed
                     if ed <= theta:
                         CB[i,j] = 1
-                        # if self.validation and self.c.corr(i, j) < T:
-                        #     print("[%d,%d]:%f bool:%d  (ed)%f <= %f(theta)" %
-                        #           (i, j, self.c.corr(i, j), CB[i,j], ed, theta))
+                        if self.validation and self.c.corr(i, j) < T:
+                            print("[%d,%d]:%f bool:%d  (ed)%f <= %f(theta)" %
+                                  (i, j, self.c.corr(i, j), CB[i,j], ed, theta))
                     else:
-                        pass
-                        # if self.validation and self.c.corr(i, j) >= T:
-                        #     print("[%d,%d]:%f bool:%d  (ed)%f <= %f(theta)" %
-                        #           (i, j, self.c.corr(i, j), CB[i,j], ed, theta))
+                        if self.validation and self.c.corr(i, j) >= T:
+                            print("[%d,%d]:%f bool:%d  (ed)%f <= %f(theta)" %
+                                  (i, j, self.c.corr(i, j), CB[i,j], ed, theta))
         self.logger.debug("Exact distance computations: %d/%d" % (s, total))
-        # self.logger.debug("Avg Euclidean distance computation time: %.3f ms" % (BooleanCorrelation.avg * 1000))
         return CB
 
-    def _calc_UB_LB(self, UB, LB, i, j):
-        #
-        # UB[i,j] = min([UB[i][u] + UB[u][j] for u in range(i + 1, j)])
-        # LB[i,j] = max([max(LB[i][u] - UB[u][j], LB[u][j] - UB[i][u]) for u in range(i + 1, j)])
-        #
-        m = np.inf
-        m2 = -np.inf
-        UBi = UB[i]
-        LBi = LB[i]
-        for u in range(i + 1, j):
-            t = UBi[u] + UB[u][j]
-            if t < m:
-                m = t
-            t2 = max(LBi[u] - UB[u][j], LB[u][j] - UBi[u])
-            if t2 > m2:
-                m2 = t2
-        UBi[j] = m
-        LBi[j] = m2
-
-    # avg = 0
-    # n = 0
-
     def d(self, t1: int, t2: int):
-        # BooleanCorrelation.n += 1
         ts1 = self.get_ts(t1)
         ts2 = self.get_ts(t2)
-        # begin = time.time()
         euclidean_distance = np.linalg.norm(ts1 - ts2)
-        # end = time.time()
-        # dur = end - begin
-        # BooleanCorrelation.avg = (BooleanCorrelation.n - 1) * BooleanCorrelation.avg / \
-        #                          BooleanCorrelation.n + dur / BooleanCorrelation.n
-
         return euclidean_distance
