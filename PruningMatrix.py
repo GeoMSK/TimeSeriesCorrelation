@@ -1,4 +1,6 @@
 import logging
+from itertools import count
+
 import numpy as np
 from Util import time_it
 from math import sqrt
@@ -51,7 +53,7 @@ class PruningMatrix:
         # compute the pruning matrix
         # dk = 0            
         t = sqrt(2 * m * (1 - T))
-        # countPairs = 0
+        countPairs = 0
         for i in range(N):
             j = i
             self.pruning_matrix[i, j] = True
@@ -62,11 +64,13 @@ class PruningMatrix:
                 #     self.pruning_matrix[i, i] = True
                 #     continue
 
-                dk = np.linalg.norm(fourier[i] - fourier[j])
-                bval = (dk <= t)
+                # dk = np.linalg.norm(fourier[i] - fourier[j])
+                bval = 1  # (dk <= t)
                 self.pruning_matrix[j, i] = self.pruning_matrix[i, j] = bval
-                # if bval: countPairs += 1
+                if bval: countPairs += 1
         print("")
 
-        # logging.debug("There have been %d out of %d" % (countPairs, N * (N - 1) / 2))
+        total = N * (N - 1) / 2
+        logging.debug("There have been %d out of %d, %.2f %% pruning" % (countPairs, total,
+                                                                         (total - countPairs) / total * 100))
         return self.pruning_matrix

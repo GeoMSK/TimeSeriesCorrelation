@@ -27,13 +27,14 @@ class BooleanCorrelation:
         self.size = calc_limit(limit_ts_num, len(self.norm_ds))
         self.max_ts_len = calc_limit(limit_ts_len,
                                      len(self.norm_ds[0]))  # assuming that every ts has the same length
-        # self.UB = np.full(shape=(self.size, self.size), fill_value=sys.maxsize, dtype="float32",
-        #                   order="C")
-        # self.LB = np.zeros(shape=(self.size, self.size), dtype="float32", order="C")
-        # self.CB = np.zeros(shape=(self.size, self.size), dtype="b1", order="C")
-        self.UB = [[sys.maxsize for x in range(self.size)] for y in range(self.size)]
-        self.LB = [[0 for x in range(self.size)] for y in range(self.size)]
-        self.CB = [[0 for x in range(self.size)] for y in range(self.size)]
+        self.UB = np.full(shape=(self.size, self.size), fill_value=sys.maxsize, dtype="float32",
+                          order="C")
+        self.LB = np.zeros(shape=(self.size, self.size), dtype="float32", order="C")
+        self.CB = np.zeros(shape=(self.size, self.size), dtype="b1", order="C")
+        
+        # self.UB = [[sys.maxsize for x in range(self.size)] for y in range(self.size)]
+        # self.LB = [[0 for x in range(self.size)] for y in range(self.size)]
+        # self.CB = [[0 for x in range(self.size)] for y in range(self.size)]
         self.cache = [None] * self.size
         self.logger = logging.getLogger("Correlation2")
         if validation:
@@ -64,17 +65,18 @@ class BooleanCorrelation:
         for i in range(n - 1):
             # self.logger.debug("Processing %d,%d..." % (i, i + 1))
             ed = d(i, i + 1)
-            UB[i][i+1] = LB[i][i+1] = ed
+            UB[i,i+1] = LB[i,i+1] = ed
             # self.logger.debug("%f <= %f" % (ed, theta))
             if ed <= theta:
-                CB[i][i+1] = 1
-                if self.validation and self.c.corr(i, i + 1) < T:
-                    print("[%d,%d]:%f bool:%d  (ed)%f <= %f(theta)" %
-                          (i, i + 1, self.c.corr(i, i + 1), CB[i][i+1], ed, theta))
+                CB[i,i+1] = 1
+                # if self.validation and self.c.corr(i, i + 1) < T:
+                #     print("[%d,%d]:%f bool:%d  (ed)%f <= %f(theta)" %
+                #           (i, i + 1, self.c.corr(i, i + 1), CB[i][i+1], ed, theta))
             else:
-                if self.validation and self.c.corr(i, i + 1) >= T:
-                    print("[%d,%d]:%f bool:%d  (ed)%f <= %f(theta)" %
-                          (i, i + 1, self.c.corr(i, i + 1), CB[i][i+1], ed, theta))
+                pass
+                # if self.validation and self.c.corr(i, i + 1) >= T:
+                #     print("[%d,%d]:%f bool:%d  (ed)%f <= %f(theta)" %
+                #           (i, i + 1, self.c.corr(i, i + 1), CB[i][i+1], ed, theta))
         self.logger.debug("Initial Processing of diagonal finished")
         s = 0
         total = 0
@@ -83,40 +85,45 @@ class BooleanCorrelation:
             for i in range(n - k):
                 total += 1
                 j = i + k
-                # UB[i][j] = min([UB[i][u] + UB[u][j] for u in range(i + 1, j)])
-                # LB[i][j] = max([max(LB[i][u] - UB[u][j], LB[u][j] - UB[i][u]) for u in range(i + 1, j)])
-                self._calc_UB_LB(UB, LB, i, j)
-                if UB[i][j] <= theta:
-                    CB[i][j] = 1
-                    if self.validation and self.c.corr(i, j) < T:
-                        print("[%d,%d]:%f bool:%d  (UB)%f <= %f(theta)" %
-                              (i, j, self.c.corr(i, j), CB[i][j], UB[i][j], theta))
-                elif LB[i][j] > theta:
-                    CB[i][j] = 0
-                    if self.validation and self.c.corr(i, j) >= T:
-                        print("[%d,%d]:%f bool:%d  (LB)%f > %f(theta)" %
-                              (i, j, self.c.corr(i, j), CB[i][j], LB[i][j], theta))
+                # UB[i,j] = min([UB[i][u] + UB[u][j] for u in range(i + 1, j)])
+                UB[i,j] = np.min(  UB[i, i+1:j] + UB[i+1:j, j]   )
+                # LB[i,j] = max([max(LB[i][u] - UB[u][j], LB[u][j] - UB[i][u]) for u in range(i + 1, j)])
+                LB1 = np.max(LB[i, i+1:j] - UB[i+1:j, j])
+                LB2 = np.max(LB[i+1:j, j] - UB[i, i+1:j])
+                LB[i,j] = max(LB1, LB2)
+                # self._calc_UB_LB(UB, LB, i, j)
+                if UB[i,j] <= theta:
+                    CB[i,j] = 1
+                    # if self.validation and self.c.corr(i, j) < T:
+                    #     print("[%d,%d]:%f bool:%d  (UB)%f <= %f(theta)" %
+                    #           (i, j, self.c.corr(i, j), CB[i,j], UB[i,j], theta))
+                elif LB[i,j] > theta:
+                    CB[i,j] = 0
+                    # if self.validation and self.c.corr(i, j) >= T:
+                    #     print("[%d,%d]:%f bool:%d  (LB)%f > %f(theta)" %
+                    #           (i, j, self.c.corr(i, j), CB[i,j], LB[i,j], theta))
                 else:
                     s += 1
                     ed = d(i, j)
-                    UB[i][j] = LB[i][j] = ed
+                    UB[i,j] = LB[i,j] = ed
                     if ed <= theta:
-                        CB[i][j] = 1
-                        if self.validation and self.c.corr(i, j) < T:
-                            print("[%d,%d]:%f bool:%d  (ed)%f <= %f(theta)" %
-                                  (i, j, self.c.corr(i, j), CB[i][j], ed, theta))
+                        CB[i,j] = 1
+                        # if self.validation and self.c.corr(i, j) < T:
+                        #     print("[%d,%d]:%f bool:%d  (ed)%f <= %f(theta)" %
+                        #           (i, j, self.c.corr(i, j), CB[i,j], ed, theta))
                     else:
-                        if self.validation and self.c.corr(i, j) >= T:
-                            print("[%d,%d]:%f bool:%d  (ed)%f <= %f(theta)" %
-                                  (i, j, self.c.corr(i, j), CB[i][j], ed, theta))
+                        pass
+                        # if self.validation and self.c.corr(i, j) >= T:
+                        #     print("[%d,%d]:%f bool:%d  (ed)%f <= %f(theta)" %
+                        #           (i, j, self.c.corr(i, j), CB[i,j], ed, theta))
         self.logger.debug("Exact distance computations: %d/%d" % (s, total))
         # self.logger.debug("Avg Euclidean distance computation time: %.3f ms" % (BooleanCorrelation.avg * 1000))
         return CB
 
     def _calc_UB_LB(self, UB, LB, i, j):
         #
-        # UB[i][j] = min([UB[i][u] + UB[u][j] for u in range(i + 1, j)])
-        # LB[i][j] = max([max(LB[i][u] - UB[u][j], LB[u][j] - UB[i][u]) for u in range(i + 1, j)])
+        # UB[i,j] = min([UB[i][u] + UB[u][j] for u in range(i + 1, j)])
+        # LB[i,j] = max([max(LB[i][u] - UB[u][j], LB[u][j] - UB[i][u]) for u in range(i + 1, j)])
         #
         m = np.inf
         m2 = -np.inf

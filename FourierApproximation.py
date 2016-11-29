@@ -170,14 +170,15 @@ class FourierApproximation:
         fft1 = self.coeff_cache[t1]
         fft2 = self.coeff_cache[t2]
         assert len(fft1) == len(fft2)
-        theta = (1 + e - T) * self.m
+        # theta = (1 + e - T) * self.m
         k = 1
-        dist = 0
-        while k <= K:
-            dist += np.abs(fft1[k - 1] - fft2[k - 1]) ** 2
-            if dist > theta:
-                return 0
-            k += 1
+        # dist = 0
+        dist = np.linalg.norm(fft1[:K] - fft2[:K]) ** 2
+        # while k <= K:
+        #     dist += np.abs(fft1[k - 1] - fft2[k - 1]) ** 2
+        #     if dist > theta:
+        #         return 0
+        #     k += 1
         return 1 - dist / self.m
 
         # return 1 - (np.linalg.norm(fft1 - fft2) ** 2)
