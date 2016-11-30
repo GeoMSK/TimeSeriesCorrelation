@@ -60,17 +60,17 @@ class PruningMatrix:
         for i in range(N):
             print("PruningMatrix: computing %d/%d" % (i + 1, N), end="\r")
             for j in range(i, N):
-                # if i == j:
-                #     self.pruning_matrix[i, i] = True
-                #     continue
+                if i == j:
+                    self.pruning_matrix[i, i] = True
+                    continue
 
-                # dk = np.linalg.norm(fourier[i] - fourier[j])
-                bval = 1  # (dk <= t)
+                dk = np.linalg.norm(fourier[i] - fourier[j])
+                bval = (dk <= t)
                 self.pruning_matrix[j, i] = self.pruning_matrix[i, j] = bval
                 if bval: countPairs += 1
         print("")
 
         total = N * (N - 1) / 2
-        logging.debug("There have been %d out of %d, %.2f %% pruning" % (countPairs, total,
-                                                                         (total - countPairs) / total * 100))
+        logging.debug("There have been %d out of %d, %.2f%% pruning" % (countPairs, total,
+                                                                        (total - countPairs) / total * 100))
         return self.pruning_matrix

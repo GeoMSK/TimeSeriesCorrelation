@@ -29,7 +29,7 @@ class BooleanCorrelation:
         self.CB = np.zeros(shape=(self.size, self.size), dtype="b1", order="C")
 
         self.cache = [None] * self.size
-        self.logger = logging.getLogger("Correlation2")
+        self.logger = logging.getLogger("BooleanCorrelation")
         if validation:
             self.c = PearsonCorrelation(self.norm_ds_path)
         self.validation = validation

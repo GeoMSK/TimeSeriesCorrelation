@@ -1,8 +1,7 @@
+import logging
+import numpy as np
 from Dataset.DatasetH5 import DatasetH5
 from Util import calc_limit
-import numpy as np
-import logging
-import time
 
 __author__ = 'gm'
 
@@ -39,21 +38,9 @@ class PearsonCorrelation:
             self.logger.debug("Computing %d..." % i)
             for j in range(i + 1, n):
                 self.correlation_matrix[i][j] = self.corr(i, j)
-        self.logger.debug("Avg Pearson Correlation computation time: %.3f ms" % (PearsonCorrelation.avg * 1000))
         return self.correlation_matrix
 
-    avg = 0
-    n = 0
-
     def corr(self, t1, t2):
-        PearsonCorrelation.n += 1
         ts1 = self.get_ts(t1)
         ts2 = self.get_ts(t2)
-        begin = time.time()
-        pearson_correlation = np.average(ts1 * ts2)  # ts1, ts2 should be normalized
-        end = time.time()
-        dur = end - begin
-        PearsonCorrelation.avg = (PearsonCorrelation.n - 1) * PearsonCorrelation.avg / PearsonCorrelation.n + \
-                                 dur / PearsonCorrelation.n
-
-        return pearson_correlation
+        return np.average(ts1 * ts2)  # ts1, ts2 should be normalized

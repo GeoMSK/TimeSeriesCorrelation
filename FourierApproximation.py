@@ -4,7 +4,7 @@ from Util import time_it
 from profilehooks import profile
 from Dataset.DatasetH5 import DatasetH5
 from PruningMatrix import PruningMatrix
-from Util import calc_limit, euclidean_distance_squared, euclidean_distance
+from Util import calc_limit
 
 __author__ = 'gm'
 
@@ -107,8 +107,10 @@ class FourierApproximation:
         :rtype: np.ndarray
         """
         logging.info("Begin computation of Pruning Matrix...")
-        self.__get_pruning_matrix(k, T, recompute)
-        n = self.pruning_matrix.shape[0]
+        #  bypass pruning matrix computation, instead create a table with all values True
+        # self.__get_pruning_matrix(k, T, recompute)
+        self.pruning_matrix = np.ones((self.size, self.size))
+        # n = self.pruning_matrix.shape[0]
         # nets = 0
         # pins = 0
         # for i in range(n):
@@ -156,7 +158,6 @@ class FourierApproximation:
             self.__clear_cache()
         return self.correlation_matrix
 
-    # @profile(filename="profiler.data", immediate="True", stdout=False)
     def __correlate(self, t1: int, t2: int, e: float, T: float) -> float:
         """
         compute the correlation between time-series t1 and t2, consulting the PruningMatrix
@@ -171,7 +172,7 @@ class FourierApproximation:
         fft2 = self.coeff_cache[t2]
         assert len(fft1) == len(fft2)
         # theta = (1 + e - T) * self.m
-        k = 1
+        # k = 1
         # dist = 0
         dist = np.linalg.norm(fft1[:K] - fft2[:K]) ** 2
         # while k <= K:
